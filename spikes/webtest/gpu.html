@@ -1,0 +1,44 @@
+<!doctype html><meta charset="utf-8"><title>webgpu spike</title><script type="module">
+const post = (p, b) => fetch(p, {method: "POST", body: b});
+const tag = new URLSearchParams(location.search).get("tag") || "x";
+const r = {ok: 0, tag, has_gpu: !!navigator.gpu};
+try {
+  const t0 = performance.now();
+  const adapter = navigator.gpu ? await navigator.gpu.requestAdapter() : null;
+  r.adapter = !!adapter;
+  if (adapter) {
+    const i = adapter.info || {};
+    r.info = {vendor: i.vendor, architecture: i.architecture, device: i.device, description: i.description, fallback: i.isFallbackAdapter};
+    const device = await adapter.requestDevice();
+    r.adapter_ms = Math.round(performance.now() - t0);
+    const W = 64, H = 64;
+    const tex = device.createTexture({size: [W, H], format: "rgba8unorm", usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC});
+    const shader = device.createShaderModule({code: `
+      @vertex fn vs(@builtin(vertex_index) i: u32) -> @builtin(position) vec4f {
+        var p = array<vec2f, 3>(vec2f(0.0, 0.8), vec2f(-0.8, -0.8), vec2f(0.8, -0.8));
+        return vec4f(p[i], 0.0, 1.0); }
+      @fragment fn fs() -> @location(0) vec4f { return vec4f(1.0, 0.5, 0.0, 1.0); }`});
+    const pipe = device.createRenderPipeline({layout: "auto", vertex: {module: shader, entryPoint: "vs"},
+      fragment: {module: shader, entryPoint: "fs", targets: [{format: "rgba8unorm"}]}, primitive: {topology: "triangle-list"}});
+    const buf = device.createBuffer({size: W * H * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ});
+    const enc = device.createCommandEncoder();
+    const pass = enc.beginRenderPass({colorAttachments: [{view: tex.createView(), loadOp: "clear", storeOp: "store", clearValue: {r: 0, g: 0, b: 1, a: 1}}]});
+    pass.setPipeline(pipe); pass.draw(3); pass.end();
+    enc.copyTextureToBuffer({texture: tex}, {buffer: buf, bytesPerRow: W * 4}, [W, H]);
+    const t1 = performance.now();
+    device.queue.submit([enc.finish()]);
+    await buf.mapAsync(GPUMapMode.READ);
+    r.render_ms = Math.round(performance.now() - t1);
+    const px = new Uint8Array(buf.getMappedRange().slice(0));
+    const at = (x, y) => Array.from(px.slice((y * W + x) * 4, (y * W + x) * 4 + 4));
+    r.corner = at(0, 0); r.center = at(32, 40);
+    r.pixels_ok = r.corner.join() === "0,0,255,255" && r.center.join() === "255,128,0,255";
+    // PNG via OffscreenCanvas (spike only; bmf encodes PNG itself in wasm)
+    const oc = new OffscreenCanvas(W, H); oc.getContext("2d").putImageData(new ImageData(new Uint8ClampedArray(px), W, H), 0, 0);
+    const png = await oc.convertToBlob({type: "image/png"});
+    await post("/file/tri_" + tag + ".png", png);
+    r.ok = r.pixels_ok ? 1 : 0;
+  }
+} catch (err) { r.error = String(err); }
+await post("/result", JSON.stringify(r));
+</script>

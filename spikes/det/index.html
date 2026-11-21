@@ -1,0 +1,16 @@
+<!doctype html><meta charset="utf-8"><title>det spike</title><script type="module">
+const post = (p, b) => fetch(p, {method: "POST", body: b});
+const q = new URLSearchParams(location.search);
+try {
+  const memory = new WebAssembly.Memory({initial: 4, maximum: 64});
+  const bytes = await (await fetch("out/" + (q.get("wasm") || "det.wasm"))).arrayBuffer();
+  const {instance} = await WebAssembly.instantiate(bytes, {env: {memory}});
+  const e = instance.exports;
+  e.init(12345);
+  const hashes = [];
+  const t0 = performance.now();
+  for (let b = 0; b < 100; b++) { e.run(100); hashes.push(BigInt.asUintN(64, e.hash()).toString(16).padStart(16, "0")); }
+  const t1 = performance.now();
+  await post("/result", JSON.stringify({ok: 1, hashes, ns_per_tick: Math.round((t1 - t0) * 1e6 / 10000)}));
+} catch (err) { await post("/result", JSON.stringify({ok: 0, error: String(err)})); }
+</script>

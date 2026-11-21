@@ -1,0 +1,24 @@
+<!doctype html><meta charset="utf-8"><title>wasm spike</title><script type="module">
+const post = (p, b) => fetch(p, {method: "POST", body: b});
+try {
+  const memory = new WebAssembly.Memory({initial: 2, maximum: 16});
+  const logs = [];
+  const bytes = await (await fetch("out/mod.wasm")).arrayBuffer();
+  const mod = await WebAssembly.compile(bytes);
+  const imports = WebAssembly.Module.imports(mod).map(i => i.module + "." + i.name + ":" + i.kind);
+  const inst = await WebAssembly.instantiate(mod, {env: {memory, js_log_i64: v => logs.push(String(v))}});
+  const e = inst.exports;
+  e.log_test();
+  const r = {
+    ok: 1, imports, logs,
+    add: e.add(40, 2),
+    u64_ops: String(e.u64_ops(1234567890123n, 77n)),
+    struct_ops: e.struct_ops(64),
+    simd_sum: e.simd_sum(100),
+    f2i_big: e.f2i(3e9), f2i_nan: e.f2i(NaN), f2i_neg: e.f2i(-3e9),
+    i64_div: String(e.i64_div(-7n, 2n)),
+    ua: navigator.userAgent,
+  };
+  await post("/result", JSON.stringify(r));
+} catch (err) { await post("/result", JSON.stringify({ok: 0, error: String(err)})); }
+</script>

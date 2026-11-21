@@ -1,0 +1,7 @@
+* text=auto eol=lf
+*.png binary
+*.bmfr binary
+*.pak binary
+*.state binary
+*.wav binary
+*.bat text eol=crlf
