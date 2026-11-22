@@ -9,9 +9,9 @@
 #ifndef BMF_PLATFORM_H
 #define BMF_PLATFORM_H
 
-#include "base/base_types.h"
-#include "base/base_string.h"
-#include "base/base_memory.h"
+#include "../bmf.h"
+#include "../base/base_string.h"
+#include "../base/base_memory.h"
 
 // ================================================================ process
 // First call of every entry point (runtime exe, test runner). Sets this thread's FPU state
@@ -47,8 +47,34 @@ typedef enum bmf_stream {
 // thread). O(len).
 void bmf_platform_write(bmf_stream stream, const char* data, i32 len);
 
+// Crash reports (task 1A-35). An assert, a bmf_panic or an exception nobody handles (access
+// violation, integer division by zero, illegal instruction: UBSan traps and __builtin_trap, stack
+// overflow) writes one JSON line to stderr and ends the process (exit code: the exception code,
+// for asserts and panics 0xC000001D from the trap that follows them):
+//   {"event":"crash","reason":"assert"|"panic"|"exception","detail":TEXT,"file":F,"line":N
+//    [,"code":"0xC0000005","address":"0x..."] [hook keys]}
+// The first crash wins: a crash on another thread meanwhile waits for the process to end; a crash
+// inside the report itself ends the process at once. Installed by bmf_platform_init (a vectored
+// exception handler for faults in our own modules, and a 64 KiB stack guarantee on every platform thread so a stack
+// overflow can still be reported).
+//
+// The hook runs once, on the crashing thread, before the line's closing brace: it may write files
+// and appends more keys (",\"tick\":12,...") to out[0..capacity), returning their length. It must
+// use only memory that exists already (no arena growth). 0 = none (the default). Any thread. O(1).
+typedef i32 (*bmf_platform_crash_hook)(char* out, i32 capacity);
+void bmf_platform_set_crash_hook(bmf_platform_crash_hook hook);
+
+// Wall-clock time: nanoseconds since 1970-01-01 00:00 UTC (100 ns steps on Windows). For names
+// and reports only, never for the simulation (R2). Any thread. O(1).
+i64 bmf_platform_utc_ns(void);
+
 // Writes any buffered bytes of the stream to the OS. Main thread only. O(buffered bytes).
 void bmf_platform_flush(bmf_stream stream);
+
+// Reads up to `capacity` bytes of standard input (unbuffered), blocking until at least one byte
+// is available. Returns the byte count, 0 at the end of input (closed pipe, end of file), -1 on
+// another error. Any thread: the control protocol reads on its own thread (task 1A-31). O(bytes).
+i32 bmf_platform_stdin_read(void* buffer, i32 capacity);
 
 // ================================================================ time
 // Monotonic time in nanoseconds since an arbitrary start (QueryPerformanceCounter on win32).
@@ -91,6 +117,15 @@ void bmf_platform_file_unmap(bmf_file_map* map);
 // moment after a write), the rename is retried for up to 63 ms. Errors: BMF_ERR_NOT_FOUND (folder
 // missing), BMF_ERR_RANGE (path too long), BMF_ERR_IO (for example `path` stays locked). O(size).
 bmf_err bmf_platform_file_write_atomic(const char* path, const void* data, i64 size);
+
+// bmf_platform_file_write_atomic for a file given as `count` parts (parts[i], sizes[i] bytes),
+// written in order: no buffer to assemble them in. Uses only stack memory (crash dumps call it).
+// Same errors. O(total size).
+bmf_err bmf_platform_file_write_atomic_parts(const char* path, const void* const* parts, const i64* sizes, i32 count);
+
+// Creates the folder `path` (its parent must exist). BMF_OK when it exists already. Errors:
+// BMF_ERR_NOT_FOUND (parent missing), BMF_ERR_RANGE, BMF_ERR_IO. Uses only stack memory. O(1).
+bmf_err bmf_platform_dir_create(const char* path);
 
 // Deletes a file. Errors: BMF_ERR_NOT_FOUND, BMF_ERR_RANGE, BMF_ERR_IO. O(1).
 bmf_err bmf_platform_file_delete(const char* path);
@@ -226,35 +261,11 @@ void bmf_platform_thread_join(bmf_thread* thread);
 // Logical processors available to this process (all processor groups). O(1).
 i32 bmf_platform_cpu_count(void);
 
-// ================================================================ keys (task 1A-12)
-// Physical key positions, named after the US layout (like the web `KeyboardEvent.code`): BMF_KEY_Q
-// is the key left of W whatever the layout prints on it. Text input comes separately as
-// BMF_EVENT_TEXT. The input module (1A-22) and bmf.h (1A-24) take this enum over unchanged.
-typedef enum bmf_key {
-    BMF_KEY_NONE = 0,
-    BMF_KEY_A, BMF_KEY_B, BMF_KEY_C, BMF_KEY_D, BMF_KEY_E, BMF_KEY_F, BMF_KEY_G, BMF_KEY_H, BMF_KEY_I,
-    BMF_KEY_J, BMF_KEY_K, BMF_KEY_L, BMF_KEY_M, BMF_KEY_N, BMF_KEY_O, BMF_KEY_P, BMF_KEY_Q, BMF_KEY_R,
-    BMF_KEY_S, BMF_KEY_T, BMF_KEY_U, BMF_KEY_V, BMF_KEY_W, BMF_KEY_X, BMF_KEY_Y, BMF_KEY_Z,
-    BMF_KEY_0, BMF_KEY_1, BMF_KEY_2, BMF_KEY_3, BMF_KEY_4, BMF_KEY_5, BMF_KEY_6, BMF_KEY_7, BMF_KEY_8, BMF_KEY_9,
-    BMF_KEY_ESCAPE, BMF_KEY_ENTER, BMF_KEY_TAB, BMF_KEY_BACKSPACE, BMF_KEY_SPACE,
-    BMF_KEY_MINUS, BMF_KEY_EQUAL, BMF_KEY_LEFT_BRACKET, BMF_KEY_RIGHT_BRACKET, BMF_KEY_BACKSLASH,
-    BMF_KEY_SEMICOLON, BMF_KEY_APOSTROPHE, BMF_KEY_GRAVE, BMF_KEY_COMMA, BMF_KEY_PERIOD, BMF_KEY_SLASH,
-    BMF_KEY_INTL_BACKSLASH,   // the extra key right of left Shift on ISO keyboards
-    BMF_KEY_CAPS_LOCK, BMF_KEY_SCROLL_LOCK, BMF_KEY_NUM_LOCK, BMF_KEY_PRINT_SCREEN, BMF_KEY_PAUSE,
-    BMF_KEY_F1, BMF_KEY_F2, BMF_KEY_F3, BMF_KEY_F4, BMF_KEY_F5, BMF_KEY_F6, BMF_KEY_F7, BMF_KEY_F8,
-    BMF_KEY_F9, BMF_KEY_F10, BMF_KEY_F11, BMF_KEY_F12, BMF_KEY_F13, BMF_KEY_F14, BMF_KEY_F15, BMF_KEY_F16,
-    BMF_KEY_F17, BMF_KEY_F18, BMF_KEY_F19, BMF_KEY_F20, BMF_KEY_F21, BMF_KEY_F22, BMF_KEY_F23, BMF_KEY_F24,
-    BMF_KEY_INSERT, BMF_KEY_DELETE, BMF_KEY_HOME, BMF_KEY_END, BMF_KEY_PAGE_UP, BMF_KEY_PAGE_DOWN,
-    BMF_KEY_LEFT, BMF_KEY_RIGHT, BMF_KEY_UP, BMF_KEY_DOWN,
-    BMF_KEY_KP_0, BMF_KEY_KP_1, BMF_KEY_KP_2, BMF_KEY_KP_3, BMF_KEY_KP_4, BMF_KEY_KP_5, BMF_KEY_KP_6,
-    BMF_KEY_KP_7, BMF_KEY_KP_8, BMF_KEY_KP_9, BMF_KEY_KP_DECIMAL, BMF_KEY_KP_DIVIDE, BMF_KEY_KP_MULTIPLY,
-    BMF_KEY_KP_SUBTRACT, BMF_KEY_KP_ADD, BMF_KEY_KP_ENTER,
-    BMF_KEY_LEFT_SHIFT, BMF_KEY_RIGHT_SHIFT, BMF_KEY_LEFT_CTRL, BMF_KEY_RIGHT_CTRL,
-    BMF_KEY_LEFT_ALT, BMF_KEY_RIGHT_ALT, BMF_KEY_LEFT_SUPER, BMF_KEY_RIGHT_SUPER, BMF_KEY_MENU,
-    BMF_KEY_COUNT
-} bmf_key;
-BMF_STATIC_ASSERT(BMF_KEY_COUNT <= 128, "key state is kept in two u64 bitsets");
+// 1 on the thread that called bmf_platform_init. Any thread. O(1).
+b32 bmf_platform_is_main_thread(void);
 
+// ================================================================ keys (task 1A-12)
+// bmf_key is public (bmf.h).
 // Lowercase name of a key ("a", "1", "space", "left_shift", "kp_enter", "f12"), the spelling the
 // control protocol uses (1A-31). BMF_KEY_NONE and out-of-range values give "none". O(1).
 const char* bmf_key_name(bmf_key key);
@@ -262,7 +273,7 @@ const char* bmf_key_name(bmf_key key);
 bmf_key bmf_key_from_name(bmf_str name);
 
 typedef enum bmf_mouse_button {
-    BMF_MOUSE_LEFT = 0, BMF_MOUSE_RIGHT = 1, BMF_MOUSE_MIDDLE = 2, BMF_MOUSE_X1 = 3, BMF_MOUSE_X2 = 4,
+    BMF_MOUSE_BUTTON_LEFT = 0, BMF_MOUSE_BUTTON_RIGHT = 1, BMF_MOUSE_BUTTON_MIDDLE = 2, BMF_MOUSE_BUTTON_X1 = 3, BMF_MOUSE_BUTTON_X2 = 4,
     BMF_MOUSE_BUTTON_COUNT
 } bmf_mouse_button;
 

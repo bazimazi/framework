@@ -1,4 +1,4 @@
-// base_math.c: see base_math.h.
+// base_math.c: the deterministic transcendental functions (contracts: bmf.h, math section).
 //
 // Structure: every transcendental function converts its f32 input to f64, reduces the argument
 // exactly (or with error far below 2^-50 relative), evaluates a polynomial kernel in f64 and
@@ -9,7 +9,7 @@
 //
 // Constants: hex float literals are the exact f64 values. They were derived from pi and ln 2
 // computed with big integers (Machin's formula, atanh series); tests/test_math.c recomputes them.
-#include "base_math.h"
+#include "../bmf.h"
 
 static const f64 MATH_PI       = 0x1.921fb54442d18p+1;    // pi rounded to f64
 static const f64 MATH_PIO2     = 0x1.921fb54442d18p+0;    // pi/2 rounded

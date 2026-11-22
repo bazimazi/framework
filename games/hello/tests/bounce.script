@@ -1,0 +1,20 @@
+# games/hello golden scenario: the start, a jump, two spawns, a second jump, 200 ticks later.
+# Tick counts are 60 Hz ticks (scaled for the 120 Hz recording). `golden LABEL` takes a WARP shot.
+seed 7
+size 320x180
+step 30
+golden start
+press jump 1
+step 45
+golden jump
+pointer 0 -4 2 down
+step 1
+pointer 0 -4 2 up
+step 1
+pointer 0 6 -1 down
+step 1
+pointer 0 6 -1 up
+step 120
+press jump 1
+step 200
+golden end

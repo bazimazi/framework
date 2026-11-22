@@ -1,8 +1,13 @@
 // test_main.c: the bmf unit-test runner (task 1A-08). Built by `build test` as one translation
 // unit: generated root -> src/bmf.c (BMF_BUILD_TESTS) -> this file -> tests/tests.c.
 //
-//   test.exe [filter]         run every test whose name contains `filter`
+//   test.exe [filter] [--update-golden NAME]   run every test whose name contains `filter`;
+//                             NAME selects engine golden images to rewrite (tools/test/golden.c)
+//   test.exe --golden [filter] [--update-golden NAME]   game goldens and the lint (golden.c)
+//   test.exe --perf [filter]  perf budgets of games and bench scenes, benchmark history (perf.c)
 //   test.exe --run-one NAME   run exactly one test in this process (used for expected-crash tests)
+//   test.exe --game-child GAME FLAGS...   run a test game with bmf_core_run (protocol process tests;
+//                             tests/test_protocol.c: test_game_child_main)
 //
 // Output: one JSON line per test, then one summary line. Exit code: 0 if all passed, else 1.
 // Expected-crash tests run in a child process (the runner re-invokes itself with --run-one);
@@ -89,12 +94,32 @@ typedef struct {
     b32 expect_crash;      // runs in a child process; passes if the child dies with an exception
 } bmf_test_entry;
 
+#include "golden.c"        // golden images for unit tests, the game golden runner and the lint
+#include "perf.c"          // perf budgets and the benchmark history (uses golden.c's helpers)
 #include "tests/tests.c"   // via -I<root>; defines TESTS[] (explicit table, no auto-registration)
 
 // ---------------------------------------------------------------- running
 
-// Runs `--run-one name` as a child process with its output captured (and discarded), and
-// returns the child's exit code.
+// Deletes the crash dump files a crash line in `text` names ("replay":"..." and "state":"..."):
+// expected crashes leave nothing behind.
+static void delete_crash_dump(const char* text) {
+    const char* keys[2] = { "\"replay\":\"", "\"state\":\"" };
+    for (i32 k = 0; k < 2; k++) {
+        i32 at = bmf_str_find(bmf_str_from_cstr(text), bmf_str_from_cstr(keys[k]), 0);
+        if (at < 0) continue;
+        char path[1024];
+        i32 n = 0;
+        for (const char* c = text + at + bmf_cstr_len(keys[k]); *c && *c != '"' && n < (i32)sizeof path - 1; c++) {
+            if (*c == '\\' && c[1]) c++;
+            path[n++] = *c;
+        }
+        path[n] = 0;
+        bmf_platform_file_delete(path);
+    }
+}
+
+// Runs `--run-one name` as a child process with its output captured (only to delete the crash
+// dump it names), and returns the child's exit code.
 static u32 run_child(const char* name) {
     WCHAR exe[1024];
     u32 n = GetModuleFileNameW(0, exe, 1024);
@@ -123,11 +148,17 @@ static u32 run_child(const char* name) {
     bmf_memset(&pi, 0, sizeof pi);
     b32 started = CreateProcessW(exe, cmd, 0, 0, 1, 0, 0, 0, &si, &pi) != 0;
     CloseHandle(pipe_write);
+    static char output[64 * 1024];
+    i32 used = 0;
     if (started) {
         char sink[4096];
         u32 got = 0;
-        while (ReadFile(pipe_read, sink, sizeof sink, &got, 0) && got) {}
+        while (ReadFile(pipe_read, sink, sizeof sink, &got, 0) && got) {
+            for (u32 i = 0; i < got && used < (i32)sizeof output - 1; i++) output[used++] = sink[i];
+        }
     }
+    output[used] = 0;
+    delete_crash_dump(output);
     CloseHandle(pipe_read);
     if (!started) return 0;
     WaitForSingleObject(pi.hProcess, (u32)WIN32_INFINITE);
@@ -149,6 +180,19 @@ void bmf_win32_entry(void) {
     const char* second = args.count > 2 ? args.values[2] : "";
     i32 test_count = (i32)(sizeof TESTS / sizeof TESTS[0]);
 
+    if (bmf_cstr_eq(first, "--game-child")) bmf_platform_exit(test_game_child_main(args.count, args.values));
+    // --update-golden NAME (anywhere after the mode) selects goldens to rewrite.
+    const char* positional[2] = { "", "" };
+    i32 positional_count = 0;
+    b32 golden_mode = 0, perf_mode = 0;
+    for (i32 i = 1; i < args.count; i++) {
+        if (bmf_cstr_eq(args.values[i], "--update-golden") && i + 1 < args.count) { golden_update_name = args.values[++i]; continue; }
+        if (bmf_cstr_eq(args.values[i], "--golden")) { golden_mode = 1; continue; }
+        if (bmf_cstr_eq(args.values[i], "--perf")) { perf_mode = 1; continue; }
+        if (positional_count < 2) positional[positional_count++] = args.values[i];
+    }
+    if (golden_mode) bmf_platform_exit(golden_main(positional[0]));
+    if (perf_mode) bmf_platform_exit(perf_main(positional[0]));
     if (bmf_cstr_eq(first, "--run-one")) {
         // No Windows Error Reporting for expected crashes: it adds ~0.5 s per crash.
         SetErrorMode(WIN32_SEM_FAILCRITICALERRORS | WIN32_SEM_NOGPFAULTERRORBOX | WIN32_SEM_NOOPENFILEERRORBOX);
@@ -163,7 +207,7 @@ void bmf_win32_entry(void) {
         bmf_platform_exit(2);
     }
 
-    const char* filter = first;
+    const char* filter = positional[0];
     i32 run = 0, passed = 0;
     for (i32 i = 0; i < test_count; i++) {
         const bmf_test_entry* e = &TESTS[i];
@@ -209,9 +253,13 @@ void bmf_win32_entry(void) {
         line[w.len + 1] = 0;
         test_out(line);
     }
-    char summary[256];
-    bmf_fmt_buf(summary, (i32)sizeof summary, "{\"tests\":%i,\"passed\":%i,\"failed\":%i,\"ms\":%li}\n",
-                run, passed, run - passed, (bmf_platform_time_ns() - start) / 1000000);
+    char summary[512];
+    if (run == 0 && filter[0])   // say so: a filter that matches no unit test is easy to mistake for a pass
+        bmf_fmt_buf(summary, (i32)sizeof summary, "{\"tests\":0,\"passed\":0,\"failed\":0,\"ms\":%li,\"warning\":\"no unit test name contains '%s'\"}\n",
+                    (bmf_platform_time_ns() - start) / 1000000, filter);
+    else
+        bmf_fmt_buf(summary, (i32)sizeof summary, "{\"tests\":%i,\"passed\":%i,\"failed\":%i,\"ms\":%li}\n",
+                    run, passed, run - passed, (bmf_platform_time_ns() - start) / 1000000);
     test_out(summary);
     bmf_platform_exit(run == passed ? 0 : 1);
 }

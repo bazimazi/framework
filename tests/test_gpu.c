@@ -230,6 +230,14 @@ static void test_gpu_validation_write_overlap(bmf_test* t) {
     bmf_gpu_buffer_write(b, 0, data, 64);   // before the previous range in the same period
 }
 
+static void test_gpu_validation_static_uniform_write(bmf_test* t) {
+    gpu_test_init_null(0, 0);
+    bmf_gpu_buffer_desc ud = { BMF_GPU_BUFFER_UNIFORM, 256, 0, 0, "constants" };
+    bmf_gpu_buffer u = bmf_gpu_buffer_create(&ud);
+    static u8 data[64];
+    bmf_gpu_buffer_write(u, 0, data, 64);   // UNIFORM buffers must be dynamic to be written
+}
+
 static void test_gpu_validation_vertex_read_past_end(bmf_test* t) {
     gpu_test_init_null(0, 0);
     bmf_gpu_buffer_desc vb = { BMF_GPU_BUFFER_VERTEX, 32, 0, 0, "quad" };

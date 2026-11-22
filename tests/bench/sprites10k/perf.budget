@@ -1,0 +1,9 @@
+# sprites10k perf budget (SPEC §12.3: 10 000 sprites, CPU submit plus sort < 0.5 ms on desktop;
+# task 1A-42): `draw` computes and submits the sprites, `draw2d_flush` sorts, gathers and batches
+# them (null GPU backend: no upload). The two limits add up to the 0.5 ms target. Measured
+# 2026-11-22 (win64, -O2 LTO): draw p99 78..81 us, draw2d_flush p99 66..81 us.
+replay=tests/bench.60hz.bmfr
+size=320x180
+zone=draw p99_us<=250
+zone=draw2d_flush p99_us<=250
+zone=tick p99_us<=10

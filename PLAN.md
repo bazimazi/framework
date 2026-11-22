@@ -53,7 +53,7 @@ How to use it:
   - [x] P0-08 Spike: D3D11 at build time and headless — done 2026-11-18
 
 ### Phase 1a — Windows skeleton plus agent loop
-- [ ] **Phase 1a complete** (exit criteria in 1A-45)
+- [x] **Phase 1a complete** (exit criteria in 1A-45) — done 2026-11-22
   - [x] **M1** Build program, base layer, tests
     - [x] 1A-01 `build.c` v1 — done 2026-11-19
     - [x] 1A-02 base: types, asserts, builtins — done 2026-11-19
@@ -66,40 +66,40 @@ How to use it:
     - [x] 1A-06 base: strings, format, parse, JSON writer — done 2026-11-19
     - [x] 1A-07 base: hash, RNG, sort — done 2026-11-19
     - [x] 1A-08 Test runner — done 2026-11-19
-  - [ ] **M2** Win32 platform and GPU
+  - [x] **M2** Win32 platform and GPU
     - [x] 1A-10 Win32 API declarations — done 2026-11-19
     - [x] 1A-11 Win32 platform core — done 2026-11-20
     - [x] 1A-12 Win32 window and events — done 2026-11-20
     - [x] 1A-13 GPU API (+ null backend) — done 2026-11-21
-    - [ ] 1A-14 D3D11 backend
+    - [x] 1A-14 D3D11 backend — done 2026-11-21
       - [x] 1A-14a device and swapchain — done 2026-11-21
-      - [ ] 1A-14b resources
-      - [ ] 1A-14c draw, passes, readback
-    - [ ] 1A-15 Build-time shader compilation
-  - [ ] **M3** Engine core, input, draw2d
-    - [ ] 1A-20 draw2d
-      - [ ] 1A-20a instances, sorting, batching
-      - [ ] 1A-20b SDF shader
-      - [ ] 1A-20c cameras
-    - [ ] 1A-21 Stroke font
-    - [ ] 1A-22 Input
-    - [ ] 1A-23 Engine core and game loop
-    - [ ] 1A-24 `bmf.h` public header v0
-  - [ ] **M4** Debug and agent interface
-    - [ ] 1A-30 Reflection
-    - [ ] 1A-31 Control protocol
-    - [ ] 1A-32 Headless mode and screenshots
-    - [ ] 1A-33 Replay
-    - [ ] 1A-34 Snapshots and hashing
-    - [ ] 1A-35 Crash handling
-    - [ ] 1A-36 Profiler, memory report, logging
+      - [x] 1A-14b resources — done 2026-11-21
+      - [x] 1A-14c draw, passes, readback — done 2026-11-21
+    - [x] 1A-15 Build-time shader compilation — done 2026-11-21
+  - [x] **M3** Engine core, input, draw2d
+    - [x] 1A-20 draw2d — done 2026-11-21 (golden-image item moved to 1A-41)
+      - [x] 1A-20a instances, sorting, batching — done 2026-11-21
+      - [x] 1A-20b SDF shader — done 2026-11-21
+      - [x] 1A-20c cameras — done 2026-11-21
+    - [x] 1A-21 Stroke font — done 2026-11-21 (golden-image item moved to 1A-41)
+    - [x] 1A-22 Input — done 2026-11-21
+    - [x] 1A-23 Engine core and game loop — done 2026-11-22
+    - [x] 1A-24 `bmf.h` public header v0 — done 2026-11-22
+  - [x] **M4** Debug and agent interface
+    - [x] 1A-30 Reflection — done 2026-11-22
+    - [x] 1A-31 Control protocol — done 2026-11-22
+    - [x] 1A-32 Headless mode and screenshots — done 2026-11-22
+    - [x] 1A-33 Replay — done 2026-11-22
+    - [x] 1A-34 Snapshots and hashing — done 2026-11-22
+    - [x] 1A-35 Crash handling — done 2026-11-22
+    - [x] 1A-36 Profiler, memory report, logging — done 2026-11-22
   - [ ] **M5** Hello game, golden infrastructure, API.md
-    - [ ] 1A-40 `games/hello`
-    - [ ] 1A-41 Golden test infrastructure
-    - [ ] 1A-42 Perf budget runner and benchmark scenes
-    - [ ] 1A-43 `build api` (API.md generator)
-    - [ ] 1A-44 Module READMEs and docs
-    - [ ] 1A-45 Phase 1a exit validation
+    - [x] 1A-40 `games/hello` — done 2026-11-22
+    - [x] 1A-41 Golden test infrastructure — done 2026-11-22
+    - [x] 1A-42 Perf budget runner and benchmark scenes — done 2026-11-22
+    - [x] 1A-43 `build api` (API.md generator) — done 2026-11-22
+    - [x] 1A-44 Module READMEs and docs — done 2026-11-22
+    - [x] 1A-45 Phase 1a exit validation — done 2026-11-22
 
 ### Phase 1b — Full 2D stack plus web
 - [ ] **Phase 1b complete** (exit criteria in 1B-51)
@@ -456,16 +456,19 @@ Every spike report exists. O-3 has approved the amendments in §9. P0-06 passed.
   - **c.** Pipeline creation from embedded bytecode (input layout plus blend, rasterizer and depth states, all created up front and cached in the pipeline); draw calls; readback through a staging texture.
   - A test-only check, `tests/test_vtable_slots.c`, compiles **with** the SDK `d3d11.h` (test build only) and asserts that our vtable offsets match the SDK's. This is a host test, not part of the runtime (amendment A-01 covers host tools).
 - [x] a. device and swapchain (2026-11-21)
-- [ ] b. resources
-- [ ] c. pipelines, draws, readback, `tests/test_vtable_slots.c`
-- [ ] Acceptance: on WARP, a clear-color test and a one-triangle test match expected pixels exactly. A swapchain resize stress test (1000 resizes) shows no leaks (the live-object count from `ID3D11Debug` stays stable in debug). (2026-11-21, 1A-14a: the resize part passes: `gpu.d3d11_resize_stress`, 4 live objects before and after; a deliberately leaked buffer makes it fail. Pixel tests need 1A-14c readback.)
+- [x] b. resources (2026-11-21)
+- [x] c. pipelines, draws, readback, `tests/test_vtable_slots.c` (2026-11-21)
+- [x] Acceptance: on WARP, a clear-color test and a one-triangle test match expected pixels exactly. A swapchain resize stress test (1000 resizes) shows no leaks (the live-object count from `ID3D11Debug` stays stable in debug). (2026-11-21, 1A-14a: the resize part passes: `gpu.d3d11_resize_stress`, 4 live objects before and after; a deliberately leaked buffer makes it fail. Pixel tests need 1A-14c readback.) (2026-11-21, 1A-14c: `gpu.d3d11_clear_pixels` and `gpu.d3d11_triangle_pixels` match exactly on WARP; both were shown to fail on a planted error; they also pass on the Intel UHD 770 hardware device.)
 - Note (1A-14a, 2026-11-21): `src/gpu/d3d11/gpu_d3d11.c` is included by `bmf.c` before `gpu.c`; `gpu.c` calls `gpu_d3d11_*` at its `backend:` points inside `#if BMF_OS_WINDOWS`. Device lost = `bmf_panic` with the operation, HRESULT name and removed reason (no recovery in Phase 1). Debug-layer errors panic (they are backend bugs, the frontend validated), warnings go to stderr as JSON lines until `bmf_log` (1A-36). Flip-model `Present` never reports occlusion here, not even minimized (it returns at once), so `begin_frame` checks `IsIconic` to honor its "0 when minimized" contract. The vtable-slot test moves to 1A-14c, when every interface the backend calls is in use.
+- Note (1A-14b, 2026-11-21): (1) New `gpu.h` rule: a UNIFORM buffer must be `dynamic` to be written (frontend assert, expected-crash test). The debug layer showed D3D11 allows a partial update of a default constant buffer only with `D3D11_COPY_NO_OVERWRITE`/`DISCARD`, which would race frames in flight or drop the other bytes. Constant uniform data goes in at create. (2) The backend requires the D3D11.1 runtime (`ID3D11DeviceContext1` replaces the plain context) and the `D3D11_OPTIONS` `ConstantBufferOffsetting` and `MapNoOverwriteOnDynamicConstantBuffer`; a hardware device without them falls back to WARP (this machine: Intel UHD 770 passes). `win32_api.h` gained `CheckFeatureSupport`, the `ID3D11DeviceContext1` slots 112-123 (`UpdateSubresource1`, `VSSetConstantBuffers1`, `PSSetConstantBuffers1`), its IID and `D3D11_FEATURE_DATA_D3D11_OPTIONS`, all checked against SDK 10.0.26100 `d3d11.h`/`d3d11_1.h`. (3) sRGB textures use the `_SRGB` DXGI format directly; there is no separate sRGB view of a non-sRGB texture (no user asks for one).
+- Note (1A-14c, 2026-11-21): (1) Shader bytecode comes from `gpu_d3d11_shader_codes[]`, which 1A-15 must generate (`out/gen/shaders_d3d11.h`); until then tests compile their own HLSL at test time with `d3dcompiler_47.dll` (test-only, ids 60/61). (2) Bind sets AddRef the views/buffers/samplers they name, like WebGPU bind groups. (3) D3D11.1 constant-buffer ranges are rounded up to 16 constants (256 bytes); binding the last 16 bytes of a buffer works on WARP without debug-layer messages. (4) `gpu.h`: the pass `clear_color` is linear; sRGB targets encode it (0.5 -> 188), as WebGPU does. (5) The vtable-slot test is a host check run by `build test` before the unit tests (`build.c` finds MSVC headers: newest `VC\Tools\MSVC\<ver>` or `BMF_MSVC`; skipped with a message when absent). It covers 132 typed methods, 45 struct sizes and 8 D3D11/DXGI GUIDs; WASAPI GUIDs and constants stay as checked once in 1A-10.
 
 #### 1A-15 Build-time shader compilation — S
 - Deps: 1A-01, P0-08.
 - Files: `build.c` (`build shaders` command, also run automatically when shader files change), `shaders/d3d11/*.hlsl`.
 - Content: for each `shaders/d3d11/<name>.hlsl` with entries `vs_main`/`ps_main`, compile with `D3DCompile` (target `vs_5_0`/`ps_5_0`, `D3DCOMPILE_OPTIMIZATION_LEVEL3` in release, `DEBUG|SKIP_OPTIMIZATION` in debug) into `out/gen/shaders_d3d11.h`, which contains the `bmf_shader_id` enum and the bytecode arrays. Compiler errors are re-printed in `file:line:col: error:` form.
-- [ ] Acceptance: a deliberately broken shader produces a clickable error line and exit code 1.
+- [x] Acceptance: a deliberately broken shader produces a clickable error line and exit code 1. (2026-11-21: syntax error, warning, missing entry point, error inside an `#include`d file, bad file name, unsupported resource kind and out-of-range register each print `<full path>:<line>:<col>: error: ...` and exit 1, from `build shaders`, `build win64` and `build test`.)
+- Note (1A-15, 2026-11-21): (1) `out/gen/shaders_d3d11.h` holds debug and release bytecode (`#if BMF_DEBUG`), so one file serves both configurations; it also carries the b/t/s registers each shader declares (read from the DXBC RDEF chunk, debug and release must agree), and the D3D11 backend now asserts in `bmf_gpu_bindset_create` that a bind set fills exactly those slots (the promise in `gpu.h`). (2) Test shaders moved from test-time `D3DCompile` to `tests/shaders/d3d11/*.hlsl`, compiled by the same generator into `out/gen/test_shaders_d3d11.h` (ids 56..63; `build test` only): one way to compile HLSL. (3) Regeneration is keyed on the contents of every file under `shaders/d3d11` plus the compiler DLL's size and time; `build win64` and `build test` run it first. (4) Strictness and warnings-as-errors are on. (5) Debug bytecode is not reproducible (`D3DCOMPILE_DEBUG` embeds a PDB GUID); release bytecode is.
 
 ### M3 — Engine core, input, draw2d
 
@@ -477,10 +480,16 @@ Every spike report exists. O-3 has approved the amendments in §9. P0-06 passed.
   - Public calls: `bmf_draw_rect`, `_rect_rounded`, `_circle`, `_ring`, `_line` (capsule), `_triangle`, `_sprite`, `_text`. Each takes an explicit layer.
   - **b.** One HLSL pipeline: the vertex shader expands a unit quad per instance (rotation, size, padding for antialiasing); the pixel shader picks an SDF by `kind` (rounded-box, circle, ring, capsule, triangle, glyph-capsule, textured sprite), computes AA coverage with `fwidth`, and outputs premultiplied color.
   - **c.** World camera (y-up meters, default 64 px/m, D-19) and screen camera (y-down logical pixels); a camera stack per layer; `bmf_camera_world_to_screen` and `screen_to_world` (used by input for pointer mapping).
-- [ ] Acceptance:
-  - [ ] WARP golden images of a shape test sheet.
-  - [ ] Bench sprites-10k: CPU submit plus sort < 0.5 ms (SPEC §12.3 targets), measured by the profiler once 1A-36 lands; until then by QPC around the call.
-  - [ ] Draw call count for the test sheet ≤ 3.
+- [x] a. instances, sorting, batching (2026-11-21)
+- [x] b. SDF shader (2026-11-21)
+- [x] c. cameras (2026-11-21)
+- [x] Acceptance:
+  - [x] WARP golden images of a shape test sheet. (2026-11-22: `tests/golden/d3d11/draw2d.shapes.png` and `draw2d.cameras.png`, checked by `draw2d.d3d11_sdf_sheet` and `draw2d.d3d11_camera_pixels` (1A-41). 2026-11-21: moved to 1A-41, which needs M4 and so cannot come before 1A-20; meanwhile `draw2d.d3d11_sdf_sheet` compares every pixel of the sheet with a CPU reference and `draw2d.d3d11_pixels`/`draw2d.d3d11_camera_pixels` check exact pixels.)
+  - [x] Bench sprites-10k: CPU submit plus sort < 0.5 ms (SPEC §12.3 targets), measured by the profiler once 1A-36 lands; until then by QPC around the call. (2026-11-21, 1A-20a: 74 µs for submit + sort + gather + upload + batching of 10 000 sprites on 8 layers x 4 textures, win64 -O2 LTO, null backend, best of 200, QPC around the calls in a throwaway harness; re-measure with the D3D11 ring copy in the 1A-42 bench scene. 2026-11-22, 1A-42: `tests/bench/sprites10k` with its perf.budget, null backend: draw p99 78..81 µs + draw2d_flush p99 66..81 µs; the D3D11 ring copy is not measurable headless (WARP rasterizes inside the map) and windowed only with an occluded window here: flush p50 145 µs vs 57 µs on null.)
+  - [x] Draw call count for the test sheet ≤ 3. (2026-11-21, 1A-20b: `draw2d.d3d11_sdf_sheet`, every kind plus a sprite: 2 draws.)
+- Note (1A-20a, 2026-11-21): (1) Instances hold target pixels (y down); cameras (1A-20c) will transform at submit, so the shader never needs a camera and layers need no uniform changes. (2) Layout: position, size, rotation (f32), color (u32, read as U8X4 and swizzled), extra f32x4 (uv rect, or the other capsule/triangle points), then two u32: kind (8 bits) + corner radius f16, stroke f16 + softness f16. The three SPEC params fit only as f16 next to a 16-byte uv rect. (3) Sort key layout as in SPEC §12.2, but depth and seq stay 0: the radix sort is stable, so submission order survives without a sequence number (and constant bytes cost no passes). (4) `bmf_draw_text` moves to 1A-21 (it needs the font). (5) `shaders/d3d11/draw2d.hlsl` exists already with per-kind quad placement and a plain fill, so the pipeline, bind set check and pixel tests run now; 1A-20b adds the SDFs. (6) Shapes sample a built-in 1x1 white texture, so shapes and sprites share one pipeline and bind set layout.
+- Note (1A-20b, 2026-11-21): (1) Antialiasing does not use `fwidth`: instances are in target pixels, so each SDF is an exact pixel distance with gradient length 1, and coverage = saturate(0.5 - d / (1 + softness)). `fwidth` (the L1 norm of the screen derivatives) would widen diagonal edges by up to 1.41 and depends on each rasterizer's derivative precision, which hurts golden parity across backends (A-08). (2) A CPU twin of the distance functions in the test matches WARP exactly (max difference 0 over a 128x128 sheet with 914 edge pixels) and the Intel UHD 770 within 1. (3) The WARP golden image of the sheet waits for the golden infrastructure (1A-41); the CPU-reference comparison covers the shader meanwhile. (4) Thin shapes (< 1 px) are point-sampled: fainter than their area. (5) SPRITE edges are antialiased with the box SDF, so rotated sprites have smooth edges without texture padding.
+- Note (1A-20c, 2026-11-21): (1) Cameras are applied at submit (points through an m3x2, lengths times one scale, angle = camera rotation - shape rotation); the instances and the shader stay in target pixels, so cameras never split batches. (2) `bmf_draw2d_begin_frame(frame, view)` now takes the view (physical size, DPI scale) that submits are placed for, and resets every layer's stack to the default world camera (D-19: 64 logical px/m, origin at the view center). (3) `bmf_camera` = space, position (WORLD: point at the view center; SCREEN: point at the top-left), pixels_per_unit, rotation (the view turns counter-clockwise). `bmf_camera_world_to_screen`/`screen_to_world` work in logical pixels for a given view size with deterministic math, for input (1A-22). (4) The 1A-20 golden-image acceptance item waits for 1A-41; everything else in 1A-20 is done.
 
 #### 1A-21 Stroke font — M
 - Deps: 1A-20.
@@ -491,7 +500,11 @@ Every spike report exists. O-3 has approved the amendments in §9. P0-06 passed.
   - `bmf_text_measure` and `bmf_draw_text(pos, size, color, align, str)`; multi-line text; alignment left/center/right.
   - Stroke width as a parameter.
   - Glyph quality is reviewed by an agent viewing a `shot` of the full character sheet at 3 sizes.
-- [ ] Acceptance: a golden image of the character sheet. Every printable ASCII character renders. Measuring is consistent with drawing.
+- [x] Acceptance (2026-11-21):
+  - [x] Every printable ASCII character renders (`draw2d.d3d11_text_sheet`, viewed at sizes 12, 20 and 32).
+  - [x] Measuring is consistent with drawing (shared advance code; no ink outside the measured boxes; aligned lines reach both measured edges).
+  - [x] A golden image of the character sheet. (2026-11-22: `tests/golden/d3d11/draw2d.font.png`, checked by `draw2d.d3d11_text_sheet` (1A-41). 2026-11-21: moved to 1A-41 like 1A-20's sheet; meanwhile `draw2d.d3d11_text_sheet` compares every pixel with a CPU reference.)
+- Note (1A-21, 2026-11-21): (1) API: `bmf_text_measure(size, text)` and `bmf_draw_text(layer, position, size, stroke_width, color, align, text)` with `bmf_str` UTF-8 text; `size` is the line height (em) in camera units, `position` the top of the box at the left/center/right per `align`, `stroke_width` 0 = 0.08 x size. (2) Grid: em 64 units, baseline 48, caps 44, x-height 32, descender -12; points keep a 3-unit margin inside each glyph's advance cell and the line box, so default-stroke ink never leaves the measured box. (3) Glyphs are authored as readable polyline strings (`"x,y x,y|x,y"`) parsed once into a segment table on first use; 853 segments, about 9 per character. Each segment is a GLYPH instance (capsule SDF): text batches with shapes. (4) Text is upright in WORLD and SCREEN cameras (the down axis follows the sign of the camera transform's determinant) and turns with a rotated camera. (5) Glyph quality was reviewed from the WARP sheet image (no `shot` before 1A-32).
 
 #### 1A-22 Input — M
 - Deps: 1A-12, 1A-20c.
@@ -502,7 +515,8 @@ Every spike report exists. O-3 has approved the amendments in §9. P0-06 passed.
   - Per-frame device state aggregated from the event queue; per-tick sampling into `bmf_input` with edges computed per tick (SPEC §10).
   - Pointer mapping to world and screen positions using the camera.
   - `bmf_input` injection API used by the protocol (1A-31) and replay (1A-33).
-- [ ] Acceptance: unit tests cover edge detection when frames run 0, 1 or 4 ticks; a press-and-release within one frame still produces a press on exactly one tick; and axis normalization.
+- [x] Acceptance: unit tests cover edge detection when frames run 0, 1 or 4 ticks; a press-and-release within one frame still produces a press on exactly one tick; and axis normalization. (2026-11-21: `input.edges_frames`, `input.short_presses`, `input.axis_normalization`, plus validation, bindings, pointers, injection and text tests.)
+- Note (1A-22, 2026-11-21): (1) The module never calls the platform: the engine pumps events (`bmf_input_event`) and gamepads (`bmf_input_set_gamepads`) per frame and calls `bmf_input_sample_tick` per tick; the protocol feeds raw keys and text the same way and uses `bmf_input_inject_button/_axis/_pointer` for `press`, `axis` and `pointer`. Replay plays stored `bmf_input` directly and needs no input call. (2) Bindings are u16 values: bmf_key values, `BMF_MOUSE_*`, `BMF_PAD_*` buttons and triggers, the 2D sources `BMF_KEYS_WASD/ARROWS`, `BMF_PAD_LSTICK/RSTICK/DPAD`, and direction flags `BMF_AXIS_UP/...` that turn a digital source into one direction of an AXIS2 (so any four keys can drive an axis); 8 per action. To free the `BMF_MOUSE_LEFT...` names for bindings, the platform's `bmf_mouse_button` values became `BMF_MOUSE_BUTTON_LEFT...`. (3) Every press is counted (up to 15 waiting): a tap shorter than a frame is one pressed tick, two taps give two. Axes have no edges. (4) `BMF_ACTION_POINTER` gates `bmf_input.pointer[]` (zero without one); slot 0 is the mouse and the primary touch; `world` uses a pointer camera the game sets (`bmf_input_set_pointer_camera`, default world camera). (5) `bmf_input` is 224 bytes with an explicit `reserved` field (no implicit padding, replays compare bytes); `bmf_pointer` has `u8` flags. (6) SPEC §10's `{ "aim", BMF_ACTION_POINTER }` does not compile under the game flags (`-Wextra -Werror`, missing field initializer); tables write `{ 0 }` for empty bindings.
 
 #### 1A-23 Engine core and game loop — M
 - Deps: 1A-11, 1A-22, 1A-20.
@@ -515,13 +529,15 @@ Every spike report exists. O-3 has approved the amendments in §9. P0-06 passed.
   - Waitable-swapchain frame pacing.
   - Static and DLL game linking modes; hot reload per SPEC §8.5 (copy the DLL to `game_<n>.dll`; compare size and layout hash; keep or reset the state).
   - The command-line flags from SPEC §11.1 parsed here.
-- [ ] Acceptance: a template game that draws a moving circle runs. Editing its color and rebuilding the DLL hot-reloads within 1 s with the state kept. Changing the state layout triggers a reset event.
+- [x] Acceptance (2026-11-22): a template game that draws a moving circle runs. Editing its color and rebuilding the DLL hot-reloads within 1 s with the state kept. Changing the state layout triggers a reset event. (`games/_loop`, debug, headless WARP and windowed D3D11: DLL rebuild about 150 ms, then `{"event":"reload","state":"kept",...}` 322–367 ms after the build returned; layout change gives `"state":"reset"`. Unit tests in `tests/test_core.c`.)
+- Note (1A-23, 2026-11-22): (1) One engine per process: in debug the game DLL compiles only the engine headers, `base_builtins.c` and the game, and imports every other engine function from the exe. build.c compiles the debug exe to an object, lists its external `bmf_*` functions from the COFF symbol table into a `.def`, links with `/def` and `/implib:game.lib`, and builds the exe before the DLL (the exe does not include the game, so a game-only change leaves it up to date and it can stay locked while running). Without this, each DLL would carry its own draw2d/input state. (2) `game.dll` is copied to `game_0.dll`/`game_1.dll` alternately and the copy is loaded; a change is loaded after one unchanged 250 ms poll. (3) The engine copies the action table (input must not point into an unloaded DLL) and re-inits input only when the table changed; `bmf_input_check_actions` (new) checks a reloaded table without touching input state. (4) `bmf_ctx` is a struct with read-only public fields (`tick`, `tick_rate`, `dt`, `seed`, `view_size` (draw only), `level`, `frame`). `bmf_field`/`bmf_field_type` and `BMF_API_VERSION` live in `core.h` until 1A-30/1A-24. (5) `bmf_sfx_play(cx, sound, volume, pan)` queues presentation events (counted, audio stub until M7). (6) `--control` and `--replay` are parsed and answered with `not_implemented` until 1A-31/1A-33; the 1A-12 event-printing `--control` test mode is removed. `--scale X` is read as real-time speed (see progress note). (7) No rendering during window drag/resize (modal loop); minimized pauses the simulation; an occluded window keeps real time and sleeps 16 ms per frame. (8) Release `_empty` grew from 53 760 to 156 160 bytes: the runtime now really uses the GPU, draw2d, font and input code.
 
 #### 1A-24 `bmf.h` public header v0 — S
 - Deps: 1A-20…1A-23.
 - Files: `src/bmf.h`.
 - Content: the public API assembled from module headers. Only public types and functions, each with a contract comment (SPEC §16), and `BMF_API_VERSION 0`. Internal module headers are not exposed.
-- [ ] Acceptance: a game compiles including only `bmf.h`. Every public function has a contract comment (checked by `build api` in 1A-43; until then by review).
+- [x] Acceptance (2026-11-22): a game compiles including only `bmf.h`. Every public function has a contract comment (checked by `build api` in 1A-43; until then by review; 2026-11-22: `build api` and the `api` host check share the scan). (Checked automatically by the new `build test` host check `api`: 239 functions, each with a contract comment above it or its group; `games/_empty` and `games/_loop` compile with only a copy of `bmf.h` on the include path. Planted failures caught: a game calling `bmf_draw2d_get_stats`, a function with its comment removed.)
+- Note (1A-24, 2026-11-22): (1) `src/bmf.h` holds the public declarations themselves (moved, not included): types and asserts, memory (arenas, scratch, pools, `bmf_memory_desc`), math, SIMD, hash, RNG, sort, strings and formatting, `bmf_key`, drawing (cameras, shapes, text), input (actions, bindings, `bmf_input`, run-time action calls) and the game model (`BMF_API_VERSION 0`, game limits, `bmf_field`, `bmf_ctx`, `bmf_game_desc`, `bmf_game`, `bmf_sfx_play`). Module headers keep only the engine side and include `bmf.h`; `base_types.h`, `base_math.h`, `base_simd.h`, `base_hash.h`, `base_rng.h` and `base_sort.h` were entirely public and are gone. (2) Kept internal (adding later is not a breaking change): platform, GPU, `bmf_draw_sprite` (needs a public texture handle: 1B-32/1B-33), draw2d frame/flush/stats, input feeding and injection, `bmf_core_*`, `bmf_arena_init`/`bmf_memory`, UTF-16 conversion, the JSON writer, key names. (3) The debug game DLL now compiles only `bmf.h` and `base_builtins.c`, so a game that uses an internal declaration fails its debug build. (4) build.c and `tests/test_vtable_slots.c` include `bmf.h` instead of `base_types.h`.
 
 ### M4 — Debug and agent interface
 
@@ -537,7 +553,8 @@ Every spike report exists. O-3 has approved the amendments in §9. P0-06 passed.
   - Built-in engine paths: `rng`, `tick`, and `phys.*` once M6 lands.
   - NaN/Inf scan over all reflected f32 fields (D-37 rule 11).
   - "Did you mean" suggestions by edit distance.
-- [ ] Acceptance: unit tests on a synthetic state struct cover every type, out-of-range indices, live-count bounds and suggestions.
+- [x] Acceptance (2026-11-22): unit tests on a synthetic state struct cover every type, out-of-range indices, live-count bounds and suggestions. (`tests/test_reflect.c`, 9 tests on a 208-byte state with all 12 field types; 8 planted bugs caught.)
+- Note (1A-30, 2026-11-22): (1) `bmf_field`/`bmf_field_type` stay in `bmf.h` (since 1A-24); `bmf_field_type_size` and the field-table validation moved from core to `src/debug/reflect.c` (`bmf_reflect_check_fields`, same messages). (2) "Built-in path `rng`": the engine owns no RNG in the state block, so the engine-known sub-struct is reflected as a new field type `BMF_T_RNG` (a `bmf_rng`, value `[state, inc]`, set needs an odd inc); `BMF_T_COUNT` is now 12, `BMF_API_VERSION` stays 0 (additive, before the freeze). Built-in `tick` is read-only; the name `tick` is reserved. (3) `bmf_fields_hash` hashes name, type, offset and count per field (not `count_field`), 0 for an empty table; debug builds now reject a game whose `state_layout_hash` differs, with the value to declare in the message (`games/_loop` declares `0x8f33ca16b24c85fc`). A layout change during hot reload is therefore rejected first, then reset after the hash is updated. (4) Release builds keep the validation but not the hash check (SPEC §8.4: debug only). (5) The NaN/Inf scan is provided for the state-hash pass of 1A-34; nothing calls it per tick yet.
 
 #### 1A-31 Control protocol — M
 - Deps: 1A-30, 1A-22.
@@ -551,7 +568,8 @@ Every spike report exists. O-3 has approved the amendments in §9. P0-06 passed.
   - `watch` events.
   - Strict one-response-per-request ordering; error code enum.
   - The protocol version is reported by a `hello` command: `{"ok":1,"bmf":API_VERSION,"game":name,"tick_rate":60}`.
-- [ ] Acceptance: a scripted protocol test (the test runner spawns the game with `--headless --control --no-gpu` and pipes a command script) checks exact responses for every command.
+- [x] Acceptance (2026-11-22): a scripted protocol test (the test runner spawns the game with `--headless --control --no-gpu` and pipes a command script) checks exact responses for every command. (`protocol.process` spawns the runner itself as `--game-child protocol` with a piped script; `protocol.commands` checks the exact response of every command and error code in-process; 7 planted bugs caught. Also run by hand on `games/_loop` debug: headless with `reload`, windowed with `run`/`pause`.)
+- Note (1A-31, 2026-11-22): (1) `run`/`pause` answer `{"ok":1,"tick":T,"running":B}`, `set` answers the new value, `watch` the current value, `reload` `{"ok":1,"state":"kept"|"reset","tick":T}`; SPEC §11.2 leaves these open. (2) `press`/`axis` take TICKS >= 1 (default 1); holds are released by an after-tick hook in core. (3) Empty lines and `#` comments are not requests. (4) `BMF_AGENT` (default 0) and `BMF_PROTOCOL_ENABLED` live in `protocol.h`; release builds without it answer `--control` with `not_supported`. (5) New: `bmf_platform_stdin_read`, `bmf_str_edit_distance` (reflection now uses it), `bmf_core_request_quit`/`_quit_requested`, `bmf_core_dll_reload`; the test runner's `--game-child`. (6) Protocol writes (`set`, `press`, ...) are not recorded anywhere yet: replays (1A-33) must capture them.
 
 #### 1A-32 Headless mode and screenshots — M
 - Deps: 1A-14, 1A-31.
@@ -561,7 +579,8 @@ Every spike report exists. O-3 has approved the amendments in §9. P0-06 passed.
   - The `shot` command calls `draw` for the current state into the offscreen target, reads it back and encodes it to PNG (stored deflate blocks, CRC32, Adler-32).
   - A minimal PNG reader for stored-deflate files only, used by golden comparisons in 1A-41. The full inflate comes in 1B-30.
   - Image diff: per-channel tolerance and differing-fraction metric; writes a diff PNG.
-- [ ] Acceptance: `shot` output opens in standard image viewers. Encode then decode round-trips. The diff tool detects a one-pixel change.
+- [x] Acceptance (2026-11-22): `shot` output opens in standard image viewers. Encode then decode round-trips. The diff tool detects a one-pixel change. (Shots of `games/_loop` decoded by Windows GDI+ (System.Drawing) and by Python's zlib with every CRC checked: circle pixel 0x3DA5F4; `png.roundtrip`, `png.reference` (files from an independent encoder, all row filters), `shot.diff` (one channel of one pixel off by 1 found at its position); 9 planted bugs caught.)
+- Note (1A-32, 2026-11-22): (1) `--size WxH` (16..8192) sets the headless target and also the initial window size. (2) `shot` responds `{"ok":1,"path":P,"width":W,"height":H,"bytes":N,"tick":T}`; errors `bad_args` (path not .png, size), `not_supported` (no display, or `--no-gpu`), `io_failed` (new error code). (3) The protocol poll moved to the start of the frame, outside the GPU frame, so `shot` renders a GPU frame of its own (`bmf_core_capture`). (4) A header `src/base/base_png.h` was added next to the two listed .c files. (5) The image diff lives in `src/debug/shot.c` (`bmf_image_diff`); golden comparison (1A-41) uses it.
 
 #### 1A-33 Replay — M
 - Deps: 1A-31, 1A-07.
@@ -572,13 +591,15 @@ Every spike report exists. O-3 has approved the amendments in §9. P0-06 passed.
   - Checkpoints every N ticks (default 60).
   - `record start/stop`; `--replay`; `--replay --verify` (exit 0 on match; on mismatch, prints the first diverging tick, both hashes, and the reflected fields that differ, using a state snapshot taken at the previous checkpoint).
   - Recording is always on in debug (ring of the full session) so crash dumps have the inputs.
-- [ ] Acceptance: record then replay produces an identical hash sequence. Mutating one input byte makes verification fail at the expected tick with a field diff.
+- [x] Acceptance (2026-11-22): record then replay produces an identical hash sequence. Mutating one input byte makes verification fail at the expected tick with a field diff. (`replay.roundtrip`: 250 recorded ticks with every input kind and a protocol `set`, replayed from another seed, per-tick state hashes identical. `replay.mutated`: one byte of tick 139's input cleared: mismatch at checkpoint 190, last match 130, `"fields":[{"path":"jump.down","value":1,"at_last_match":0}]`; a second byte (tick 209): mismatch at 250 with `jump.presses` 42 vs 2; `--replay --verify` exits 0 / 1. `games/_loop`: 3600 ticks recorded (6781 bytes) and verified. 10 planted bugs caught.)
+- Note (1A-33, 2026-11-22): (1) Format beyond SPEC §11.4: the file carries the start state (recordings can start at any tick), state-write records (protocol `set` replays exactly), and per-field hashes at every checkpoint, which is what lets the mismatch report name the fields that differ. (2) "Ring of the full session": implemented as a session recording from start (restarted by hot reload) in reserved address space (256 MiB of records, about 1 byte per idle tick), not a ring; a full buffer breaks the recording instead of dropping the oldest input. (3) The first diverging tick is reported at checkpoint precision (default every 60 ticks), with the last matching checkpoint. (4) `BMF_BUILD_ID` from build.c; a differing build id only warns. (5) `--replay --control` loads the replay and lets protocol steps consume it.
 
 #### 1A-34 Snapshots and hashing — S
 - Deps: 1A-30.
 - Files: `src/debug/snap.c`.
 - Content: `hash` (streaming hash of the state block plus the tick index); `snap save/load` into named slots in a debug arena (max 16); NaN scan wired into the hash pass.
-- [ ] Acceptance: save, step 100, load, step 100 gives an identical hash. A NaN deliberately written via `set` is reported.
+- [x] Acceptance (2026-11-22): save, step 100, load, step 100 gives an identical hash. A NaN deliberately written via `set` is reported. (`snap.roundtrip`: `snap save a` at tick 10, `step 100`, `hash`, `snap load a`, `step 100`, `hash`: identical responses, and the load restores the saved hash. `snap.nonfinite`: `set numerator 0` and `set divisor 0`, one tick (the game computes ratio = 0 / 0), then `hash` answers `{"ok":0,"error":"nonfinite_state","detail":"'ratio' is NaN or Inf at tick 6: never allowed in the state (D-37 rule 11)"}`; the same for Inf; a process run to the tick-60 checkpoint stops with the debug assert naming `ratio`. `games/_loop` by hand: save at 30, hash at 130, load, hash equal to 30's, step 100, hash equal to the first 130. 10 planted bugs caught.)
+- Note (1A-34, 2026-11-22): (1) `set` refuses NaN/Inf (1A-30, D-37 rule 11), so "a NaN written via `set`" is done through the game: `set` writes the operands and the tick makes the NaN; refusing NaN in `set` stays. (2) `hash` reports a NaN/Inf as the new error `nonfinite_state` (with the path) instead of hashing; `bmf_core_state_hash` itself asserts in debug builds, as D-37 rule 11 says for the state hash pass, so replay checkpoints stop a debug game within 60 ticks of a NaN. (3) `snap save/load NAME` answer `{"ok":1,"name":NAME,"tick":T}`; new error codes `unknown_snap` and `too_many_snaps`; names are 1..31 characters of `A-Z a-z 0-9 _ . -`. Slots hold the state block and tick only (not input holds or watches), are dropped when loaded into another layout and cleared by `bmf_core_start`. (4) A header `src/debug/snap.h` was added next to `snap.c`. (5) Recordings: a snapshot load (and, fixing a 1A-33 gap, a protocol `replay` load) replaces the tick as well as the state, which a state-write record cannot express; both now restart the session recording and break an explicit recording, like a hot reload (`bmf_replay_on_state_replaced` replaces `bmf_replay_on_game_swap`). (6) The test runner's `--game-child` takes `snap` as well as `protocol`.
 
 #### 1A-35 Crash handling — S
 - Deps: 1A-33, 1A-34.
@@ -587,7 +608,8 @@ Every spike report exists. O-3 has approved the amendments in §9. P0-06 passed.
   - `SetUnhandledExceptionFilter` plus the assert hook.
   - On a crash, write `out/crash/<UTC>.bmfr` (inputs from tick 0 to the crash tick) and `.state` (the last checkpoint state), and print the crash JSON line (SPEC §11.4) with exception code and address.
   - Re-entrancy guard. Crash-time code uses only pre-allocated memory.
-- [ ] Acceptance: expected-crash tests (null dereference, assert, divide by zero via an integer path) produce a replay, and replaying it reproduces the crash at the same tick.
+- [x] Acceptance (2026-11-22): expected-crash tests (null dereference, assert, divide by zero via an integer path) produce a replay, and replaying it reproduces the crash at the same tick. (`crash.null_write`, `.assert`, `.divide_by_zero`, plus `.panic` and `.stack_overflow`: a `--game-child crash` process jumps, then crashes on purpose in its 75th tick; exit code = the exception code (0xC0000005, 0xC000001D, 0xC0000094, 0xC000001D, 0xC00000FD), exactly one crash line with `"tick":74,"phase":"tick","replay":...,"state":...`, the replay covers ticks 0..75, the `.state` holds the tick-60 checkpoint; `--replay DUMP --verify` crashes again with the same line content and tick. 10 planted bugs caught.)
+- Note (1A-35, 2026-11-22): (1) Not `SetUnhandledExceptionFilter`: with D-09's `-fno-asynchronous-unwind-tables` our frames have no unwind data, so the system never reaches the top-level filter (verified: the process died without calling it). A vectored handler takes fault codes raised in our own modules (exe, libraries loaded through `bmf_platform_library_load`) instead; faults elsewhere go on to the normal search. (2) Dumps go to `<exe dir>/crash/<UTC>-<game>.bmfr` and `.state`, not `out/crash/`: the exe dir is known at crash time without depending on the working directory; the crash line gives the absolute paths. (3) The crash line adds to SPEC §11.4's keys `detail`, `code`/`address` (exceptions), `phase`, `state`, `dump_error`. (4) The `.state` file is a `bmf_state_file_header` (112 bytes: magic "BMFS", tick, state hash, layout hash, build id, game name) plus the state block; nothing reads it yet. (5) The crash `.bmfr` has no final checkpoint and ends after the crashing tick's input. (6) The replay writer now writes from parts (`bmf_platform_file_write_atomic_parts`) instead of assembling the file in a reserved arena. (7) New platform calls: `bmf_platform_set_crash_hook`, `bmf_platform_utc_ns`, `bmf_platform_dir_create`, `bmf_platform_file_write_atomic_parts`; core: `bmf_core_running`, `bmf_core_phase_name`. (8) Plain release builds print the crash line without a dump (no session recording there).
 
 #### 1A-36 Profiler, memory report and logging — M
 - Deps: 1A-31.
@@ -598,7 +620,8 @@ Every spike report exists. O-3 has approved the amendments in §9. P0-06 passed.
   - Per-tick ring of 1024 ticks; `profile N` computes calls, mean, p50, p99 and max per zone plus frame stats and counters.
   - `mem` reports every arena's used, committed and high-water values.
   - `bmf_log` ring buffer with levels; JSON lines to stderr in control mode; `log` drains it.
-- [ ] Acceptance: profile output for a synthetic busy loop of known cost is within 5% of the expected value. A zone-nesting error is detected in debug.
+- [x] Acceptance (2026-11-22): profile output for a synthetic busy loop of known cost is within 5% of the expected value. A zone-nesting error is detected in debug. (`profile.busy_loop`: a game zone around a spin of 50, 200 and 1000 us timed by the clock, `profile 60` p50 within 5% (seen: 50.03, 200.01, 1000.02 us), plus a 100/300 us mix checking p50, p99, mean and max; 25 repeated runs stable. `crash.zone_order` and `crash.zone_left_open`: debug builds stop with `bmf_zone_end(game.0): the innermost open zone is game.1 (zones must nest)` and `bmf_zone_end(tick): the innermost open zone is game.0 ...`, and the crash dump replays it. 12 planted bugs caught.)
+- Note (1A-36, 2026-11-22): (1) Calibration: rdtsc is measured against `bmf_platform_time_ns` (QPC) over the whole time since `bmf_core_start` instead of a wait at startup; the first report waits until 10 ms have passed. (2) "Per-tick ring of 1024 ticks": the rings hold the last 1024 calls per zone (and 1024 frame times); stats are per call, which is what `calls`/`mean_us`/`p50_us`/`p99_us`/`max_us` describe, and zones outside ticks (draw, flush, present) fit the same way. (3) `profile N` with N >= 0: a new window, N ticks, the report, a new window; `profile 0` reports what ran since the last report (useful while `run`). The report adds `ticks`, `frames`, `nesting_errors`, `counter_hz`; `bodies`/`contacts` arrive with physics (M6). (4) Public additions in bmf.h (additive, `BMF_API_VERSION` stays 0): `BMF_AGENT`/`BMF_TOOLS_ENABLED` (moved from protocol.h), `bmf_zone` with engine zones 0..4 and game zones 32..63, `bmf_zone_begin/end`, `bmf_profile_zone_begin/end`, `bmf_log_level`, `bmf_log`, `bmf_log_va`, `bmf_log_count`, and `bmf_game_desc.zone_names`/`zone_name_count`. (5) `mem` lists the game's arenas, then the replay recorders' and player's and the snapshot slots' that exist. (6) Log: 256 messages of 255 bytes; `log [LEVEL]` drains all and returns those of at least LEVEL with `dropped` and per-level `counts`; stderr echo only in `--control` runs and only from the main thread (new `bmf_platform_is_main_thread`). (7) No `src/debug/log.h`: the log's engine side is declared in `profile.h`.
 
 ### M5 — Hello game, golden infrastructure, API.md
 
@@ -606,7 +629,8 @@ Every spike report exists. O-3 has approved the amendments in §9. P0-06 passed.
 - Deps: M4.
 - Files: `games/hello/game.c`.
 - Content: N bouncing circles with manual integration (no physics module), wall collisions, a click/tap to spawn, a `jump` action to impulse all circles, a score counter, text with stroke font, field table, actions. All constants per second (D-37 rule 15).
-- [ ] Acceptance: it runs windowed, headless and under control mode. It is used as the template for new games.
+- [x] Acceptance (2026-11-22): it runs windowed, headless and under control mode. It is used as the template for new games. (Debug DLL build: windowed free run (3 s, killed), windowed `--control` with `step 30` and a `shot` (checked by eye: 8 circles, walls, score text), headless free run, headless `--control` on WARP: `press jump` lifts every circle to the ceiling (score 0 to 5 in 40 ticks), `pointer 0 2 3 down/up` spawns circle 9 at (2, 3), `hash`, `shot` checked by eye. Release build ok. 600 ticks at 120 Hz recorded with a jump and a spawn and verified by `--replay --verify` (exit 0). The header comment walks through the parts of a game as the template; `games/_loop` points new games here.)
+- Note (1A-40, 2026-11-22): (1) Score = circles reaching the ceiling (a jump is how to score). (2) Up to 64 circles; a click with 64 does nothing; 8 at start from the seed. (3) Floor bounces slower than 0.6 m/s come to rest so circles settle instead of jittering. (4) The field is a fixed 20 x 11.25 m (the default world camera at 1280 x 720); other window sizes show more or less around it. (5) Circles do not collide with each other (no physics module before M6).
 
 #### 1A-41 Golden test infrastructure — M
 - Deps: 1A-32, 1A-33, 1A-40.
@@ -614,35 +638,41 @@ Every spike report exists. O-3 has approved the amendments in §9. P0-06 passed.
 - Content:
   - `build test` discovers every `games/*/tests/*.bmfr` and runs `--replay --verify` at the game's tick rate **and** at 120 Hz, with replays recorded per rate.
   - Each `*.png` golden with a sidecar `*.shot` (tick, size) is compared using the tolerances in SPEC §15.
+  - Moved here from 1A-20 and 1A-21: WARP golden images of the draw2d shape test sheet (every kind, a sprite, cameras) and of the stroke-font character sheet (every glyph at 3 sizes, the alignments).
   - `--update-golden NAME` regenerates goldens and prints each changed file.
   - A static check greps simulation code paths (`tick` call graph approximated by file list: `src/physics2d/`, and game files declared sim-only) for `bmf_fast_`, `rdtsc`, raw `(i32)` casts of floats, and `__builtin_fma`. Lint failures are test failures.
-- [ ] Acceptance: hello goldens pass. A deliberate change of the bounce constant fails both replay and image goldens with readable output.
+- [x] Acceptance (2026-11-22): hello goldens pass. A deliberate change of the bounce constant fails both replay and image goldens with readable output. (`games/hello/tests/bounce.script` recorded at 60 and 120 Hz with three 320x180 WARP shots each: 8 goldens pass. `HELLO_BOUNCE` 0.85 to 0.80: both replays fail with `"verify":"mismatch","tick":60,"last_match":0,...,"fields":[{"path":"position","value":[...],"at_last_match":[...]}...` (120 Hz: tick 120, last match 60), the `jump` and `end` images fail with e.g. `2266 of 57600 pixels differ by more than 2 (3.93%, at most 0.1%), largest channel difference 232, first at (62, 5); actual ..., diff ...`, `start` (before any bounce) still passes; restored: all pass. Engine goldens `draw2d.shapes`, `draw2d.cameras`, `draw2d.font` added to the WARP sheet tests; unit tests `golden.lint`, `golden.compare`, `golden.update_names`.)
+- Note (1A-41, 2026-11-22): (1) Scenarios are protocol scripts (`<scenario>.script`) from which `--update-golden` records `<scenario>.<R>hz.bmfr` at the game's rate and 120 Hz (tick counts scaled) and the `golden LABEL` shots with their `.shot` sidecars (`replay`, `tick`, `size`); the task's "replays recorded per rate" is that. (2) The runner is a mode of the test runner (`test.exe --golden`, `tools/test/golden.c`); `build test` builds every game with a `tests/` folder in win64 debug first (the protocol and `--replay` need a debug or agent build). (3) Engine goldens (the moved 1A-20/1A-21 items) live in `tests/golden/d3d11/` and are checked inside their unit tests through `test_golden_image`. (4) Lint scope: `src/physics2d/*.c` plus game files marked `// bmf-lint: sim` (hello is marked); the cast check is a token heuristic (see tools/test/README.md). (5) `games/hello` now fits its field into any view (camera scale from `view_size`, the same camera for pointer input), so 320x180 goldens show the whole field. (6) Golden PNGs are stored deflate (230 KB at 320x180, 1.4 MB for hello's six) until 1B-30. (7) Paths in scripts must not contain spaces (protocol tokens).
 
 #### 1A-42 Perf budget runner and benchmark scenes — S
 - Deps: 1A-36, 1A-41.
 - Files: `tools/test/perf.c`, `tests/bench/sprites10k/`, `games/hello/perf.budget`.
 - Content: release `BMF_AGENT=1` build; runs the benchmark replay; parses the budget lines (`zone=<name> p99_us<=N`); appends results to `out/bench/history.jsonl` with the git revision if available, otherwise a timestamp.
-- [ ] Acceptance: an artificially slowed zone fails its budget with the breakdown printed.
+- [x] Acceptance (2026-11-22): an artificially slowed zone fails its budget with the breakdown printed. (A 200 000-iteration spin planted in `games/hello`'s draw: `build test perf` exits 1 with `{"test":"perf.hello.bounce.60hz","ok":0,...,"budgets":[...{"zone":"draw","stat":"p99_us","limit_us":25,"value_us":97.20046,"ok":false}...],"profile":{"ticks":398,"zones":{"tick":{...},"draw":{"calls":398,"mean_us":87.67959,...},...},"msg":"draw p99_us 107.456245 > 25 (perf.budget line 9)"}` (both hello replays); restored: 3/3 pass; with the repeat on failure (note 6) the plant fails with `"runs":3`. Also checked by hand: a bad budget line, a missing replay, an unbuilt exe and a zone that never ran each fail with a readable message. Unit tests `perf.budget_parse`, `perf.check`; planted bugs (exclusive limit, zone-name prefix match, a budget without limits) are caught.)
+- Note (1A-42, 2026-11-22): (1) `build win64 release <dir> --agent` builds with `BMF_AGENT=1` into `out/<g>/win64-release-agent`; the runtime's new `--profile` flag (with `--replay`, not `--control`/`--verify`) prints the profile report of the whole run when the replay ends. (2) The runner is `test.exe --perf` (`tools/test/perf.c`), run by `build test` after the goldens; budget files add `replay=` and `size=` lines to SPEC's `zone=<name> p99_us<=N` (also p50_us, mean_us, max_us). (3) Runs use the null GPU backend: on WARP the rasterizer runs inside the flush's buffer map (2.5 ms for sprites10k), and hardware needs a window; the budgets therefore cover CPU work only (SPEC §12.3 measures CPU submit + sort), not the ring upload. (4) `tests/bench/sprites10k` is built and golden-checked like a game (golden.c and build.c also scan `tests/bench/*`); it may use internal engine headers (the sprite call and GPU textures until 1B-32/1B-33). Its sprite paths are a closed form of the simulated time, so the state is 3 scalars and the replays are about 1 KB. Measured: draw p99 78..81 µs + draw2d_flush p99 66..81 µs, budget 250 + 250 µs. (5) hello's budget (tick 10, draw 25, draw2d_flush 25 µs at p99) runs both golden replays. (6) A replay run over budget is repeated (at most 3 runs) and passes when one run meets every limit: the first full `build test` after the release builds once saw sprites10k draw p99 648 µs with an unchanged p50 (outside load); 12 standalone runs gave 78..90 µs. The planted slowdown fails all 3 runs. (7) History lines carry the UTC time always and the HEAD commit when `.git` is readable (read directly, no git process; a dirty tree is not marked). (8) circles-2k-pile and bullets-1k (SPEC §15 point 6) need physics (M6); they are not part of this task.
 
 #### 1A-43 `build api` (API.md generator) — S
 - Deps: 1A-24.
 - Files: `build.c` (api command).
 - Content: parses `src/bmf.h` (simple line parser relying on the strict header formatting rules in SPEC §16) and emits `API.md`: grouped by module, signature plus contract comment, with a token estimate at the top. It fails if any public function lacks a contract comment.
-- [ ] Acceptance: `API.md` is generated and under the 30k-token target, and the missing-comment check works.
+- [x] Acceptance (2026-11-22): `API.md` is generated and under the 30k-token target, and the missing-comment check works. (`build api`: 246 functions, 66 461 bytes, about 19 004 tokens (bytes / 3.5); every public function name of bmf.h appears with its comment, no inline body leaks. Planted: the comment of `bmf_arena_reset` removed: `{"build":"fail","target":"api","ok":0,"error":"no_contract_comment",...,"line":190,"function":"bmf_arena_reset"}`, exit 1, API.md left unchanged; a comment edited in bmf.h without `build api`: host check `api` fails with `api_md_stale`; the token target lowered to 10 000: `api_over_token_target`, exit 1.)
+- Note (1A-43, 2026-11-22): (1) API.md keeps types, enums, constants and macros as well as signatures and contracts (a game cannot be written from signatures alone); static inline functions keep only their signature. The platform/config preprocessor block stays verbatim (it shows which macros exist in which build). (2) The token estimate is bytes / 3.5 (no tokenizer in the build; C code runs denser than the usual 4 bytes per token). (3) `build test`'s `api` host check now also fails when API.md is stale or over the target, so a bmf.h change must come with `build api` (R7's contract rule is enforced by the same scan as before). (4) API.md is committed at the root (AGENTS.md and SPEC §17 point agents at it).
 
 #### 1A-44 Module READMEs and docs — S
 - Deps: all M1–M4 tasks.
 - Files: `src/*/README.md`, `docs/setup.md`, `docs/decisions.md`.
 - Content: per SPEC §17 (invariants, data layout, hot paths, limits, at most 60 lines each).
-- [ ] Acceptance: every module directory has a README. They are reviewed against the code by a separate review agent.
+- [x] Acceptance (2026-11-22): every module directory has a README. They are reviewed against the code by a separate review agent. (All 11 `src/*/` folders have one, 18..58 lines, each with Invariants, Data layout, Hot paths and Limits; new placeholder READMEs for the unimplemented `asset`, `audio`, `job` and `physics2d` (status, owning tasks, the invariants their code must keep, planned layout and targets, from SPEC and PLAN). Three independent review agents checked every concrete claim of the READMEs (plus tools/test/README.md) against the code: 40-odd findings, all fixed: wrong sizes (gpu 150 to 73 KiB, d3d11 70 to 56 KiB, draw2d 66 to 56 KiB and its camera stack entry 24 to 20 B, frame arena MiB values, core action table 3.7 to 4.6 KiB, win32_core 235 to 233 KiB), outdated statements (the stdin hook as future, `--size` as future, text sheet written to a file, 1A-24 deciding textures, debug code compiled only in tool builds, replay files assembled), wrong facts (`bmf_platform_fatal` location, runtime-loaded DLLs, mutable globals in base, key range 1..117, protocol feeding text, shader id limit, `phys` task 1B-11 vs 1B-09), missing names and tests (test_png.c, the three draw2d goldens, core.h functions). Test inventories moved from Limits to a Tests section.)
+- Note (1A-44, 2026-11-22): (1) Code changed with the docs: the protocol's `phys` placeholder now names 1B-09 (where `phys query` lands; `protocol.commands` expectation updated with it), comments in `input.h` (no text injection), `draw2d.h` (groups by texture slot), `perf.c` (null backend) and build.c's usage header. (2) `docs/setup.md` gained the optional MSVC headers, the everyday command list and test environment notes; `docs/decisions.md` is unchanged (no new owner decisions; D-01..D-41 all logged). (3) For the owner (not changed): SPEC §11.4 says `out/crash/<time>.bmfr` while dumps go to `<exe dir>/crash/<UTC>-<game>.bmfr`; SPEC §14.1 writes `BMF_PHYS_DECL(max_bodies, ...)` while PLAN 1B-03 has a leading `name`; the stored-deflate PNG reader is compiled into every runtime although SPEC §14.3 keeps decoders out of the runtime.
 
 #### 1A-45 Phase 1a exit validation — S
 - Deps: 1A-40…1A-44.
 - Steps:
-  - [ ] 1. Spawn a fresh agent with **only** `AGENTS.md`, `API.md` and `games/hello`, with the task "add a lives counter that decreases when a circle touches the bottom edge, plus a game-over screen; verify through the protocol."
-  - [ ] 2. Record every point of friction in `docs/friction.md`.
-  - [ ] 3. Fix the blockers. Spec-level issues go to the owner (R8).
-- [ ] Exit criteria (SPEC §18): hello passes golden replay and image tests at 60 Hz and 120 Hz; the fresh agent succeeds without reading framework sources; sprites-10k meets budget.
+  - [x] 1. Spawn a fresh agent with **only** `AGENTS.md`, `API.md` and `games/hello`, with the task "add a lives counter that decreases when a circle touches the bottom edge, plus a game-over screen; verify through the protocol."
+  - [x] 2. Record every point of friction in `docs/friction.md`.
+  - [x] 3. Fix the blockers. Spec-level issues go to the owner (R8).
+- [x] Exit criteria (SPEC §18) (2026-11-22): hello passes golden replay and image tests at 60 Hz and 120 Hz; the fresh agent succeeds without reading framework sources; sprites-10k meets budget. (hello: `golden.hello.bounce.60hz`/`.120hz` and the six image goldens pass; the agent (a fresh general-purpose agent allowed to read only AGENTS.md, API.md and a copy of games/hello) added lives, game over and restart, verified them through the protocol (watch, get, press, shots, a replay verified with `--replay --verify`), re-recorded its goldens with `--update-golden` and left `build test` green; checked again here: the protocol run and the game-over shot. sprites10k: draw p99 about 80 µs and draw2d_flush p99 about 75 µs against 250 + 250 µs.)
+- Note (1A-45, 2026-11-22): (1) No blocker; 2 major and 12 minor frictions, all in docs/friction.md with what was done. Fixed: AGENTS.md quick reference (flags, protocol, paths, tick meaning, replays, goldens, perf.budget, filters, lint), protocol `help` and BOM skip, `build test` messages for filters that select nothing, the `state_layout_hash` comment, the games/hello button-bit naming and lint note. (2) The `build api` token estimate was wrong by 40 % (bytes / 3.5 gave 19 004; a real tokenizer count of the same file was 32 133, over SPEC §17's 30 000); it is now calibrated (bytes / 2.07) and API.md was cut to about 29 500 by the generator (no preprocessor blocks, static asserts, engine-side declarations behind wrappers, alignment spaces or spec/task references) and two bmf.h comments (the hash design moved to src/base/README.md). (3) The agent's game is kept outside the repo in out/exit-validation/hello_lives (its goldens would add 2.7 MB and 23 goldens to every build test). (4) For the owner: the API.md token target (1.7 % headroom, still two file reads), a script-level `expect` and a `--help` flag.
 
 ---
 

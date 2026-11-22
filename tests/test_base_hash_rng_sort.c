@@ -1,4 +1,4 @@
-// Tests for src/base/base_hash.*, base_rng.h and base_sort.* (task 1A-07).
+// Tests for hashing, the RNG and sorting (src/bmf.h; base_hash.c, base_sort.c; task 1A-07).
 
 static u64 hrs_xorshift(u64* x) { *x ^= *x << 13; *x ^= *x >> 7; *x ^= *x << 17; return *x; }
 

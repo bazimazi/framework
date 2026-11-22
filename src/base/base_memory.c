@@ -1,4 +1,4 @@
-// base_memory.c: see base_memory.h.
+// base_memory.c: arenas, scratch, memory layout, pools (contracts: bmf.h and base_memory.h).
 #include "base_memory.h"
 
 #if BMF_SANITIZE

@@ -1,0 +1,10 @@
+# games/hello perf budget (SPEC §15 point 5, task 1A-42): checked by `build test` on a release
+# BMF_AGENT=1 build that plays each replay headless on the null GPU backend (CPU work only; see
+# tools/test/perf.c). Limits are microseconds per call. Measured 2026-11-22 (win64, -O2 LTO):
+# tick p99 0.07, draw p99 1.7, draw2d_flush p99 3.5.
+replay=tests/bounce.60hz.bmfr
+replay=tests/bounce.120hz.bmfr
+size=1280x720
+zone=tick p99_us<=10
+zone=draw p99_us<=25
+zone=draw2d_flush p99_us<=25

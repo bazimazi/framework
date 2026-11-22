@@ -192,8 +192,8 @@ static void test_platform_window_messages(bmf_test* t) {
     static const struct { bmf_event_type type; i32 value; } expected[] = {
         { BMF_EVENT_KEY_DOWN, BMF_KEY_F5 }, { BMF_EVENT_KEY_DOWN, BMF_KEY_F5 }, { BMF_EVENT_KEY_DOWN, BMF_KEY_UP },
         { BMF_EVENT_TEXT, 0x1F600 }, { BMF_EVENT_KEY_UP, BMF_KEY_F5 },
-        { BMF_EVENT_MOUSE_BUTTON_DOWN, BMF_MOUSE_LEFT }, { BMF_EVENT_MOUSE_MOVE, 30 }, { BMF_EVENT_MOUSE_WHEEL, -2 },
-        { BMF_EVENT_KEY_UP, BMF_KEY_UP }, { BMF_EVENT_MOUSE_BUTTON_UP, BMF_MOUSE_LEFT }, { BMF_EVENT_FOCUS_LOST, 0 },
+        { BMF_EVENT_MOUSE_BUTTON_DOWN, BMF_MOUSE_BUTTON_LEFT }, { BMF_EVENT_MOUSE_MOVE, 30 }, { BMF_EVENT_MOUSE_WHEEL, -2 },
+        { BMF_EVENT_KEY_UP, BMF_KEY_UP }, { BMF_EVENT_MOUSE_BUTTON_UP, BMF_MOUSE_BUTTON_LEFT }, { BMF_EVENT_FOCUS_LOST, 0 },
         { BMF_EVENT_CLOSE_REQUESTED, 0 },
     };
     i32 expected_count = (i32)(sizeof expected / sizeof expected[0]);

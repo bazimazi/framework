@@ -1,5 +1,5 @@
-// base_sort.c: see base_sort.h.
-#include "base_sort.h"
+// base_sort.c: radix and insertion sorts (contracts: bmf.h, sorting section).
+#include "../bmf.h"
 
 void bmf_insertion_sort_u32(u32* keys, u32* payload, i32 n) {
     for (i32 i = 1; i < n; i++) {

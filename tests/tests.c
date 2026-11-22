@@ -13,6 +13,20 @@
 #include "test_platform_window.c"
 #include "test_gpu.c"
 #include "test_gpu_d3d11.c"
+#include "test_draw2d.c"
+#include "test_draw2d_text.c"
+#include "test_input.c"
+#include "test_core.c"
+#include "test_reflect.c"
+#include "test_protocol.c"
+#include "test_png.c"
+#include "test_shot.c"
+#include "test_replay.c"
+#include "test_snap.c"
+#include "test_crash.c"
+#include "test_profile.c"
+#include "test_golden.c"
+#include "test_perf.c"
 
 static const bmf_test_entry TESTS[] = {
     { "runner.check_records_location", test_runner_check_records_location, 0 },
@@ -109,10 +123,109 @@ static const bmf_test_entry TESTS[] = {
     { "gpu.validation_format_mismatch",       test_gpu_validation_format_mismatch,    1 },
     { "gpu.validation_write_overlap",         test_gpu_validation_write_overlap,      1 },
     { "gpu.validation_vertex_read_past_end",  test_gpu_validation_vertex_read_past_end, 1 },
+    { "gpu.validation_static_uniform_write",  test_gpu_validation_static_uniform_write, 1 },
 
     { "gpu.d3d11_headless",                   test_gpu_d3d11_headless,                0 },
     { "gpu.d3d11_surface_present",            test_gpu_d3d11_surface_present,         0 },
     { "gpu.d3d11_resize_stress",              test_gpu_d3d11_resize_stress,           0 },
     { "gpu.d3d11_hresult_text",               test_gpu_d3d11_hresult_text,            0 },
     { "gpu.d3d11_device_lost_panics",         test_gpu_d3d11_device_lost_panics,      1 },
+    { "gpu.d3d11_buffers",                    test_gpu_d3d11_buffers,                 0 },
+    { "gpu.d3d11_textures_samplers",          test_gpu_d3d11_textures_samplers,       0 },
+    { "gpu.d3d11_clear_pixels",               test_gpu_d3d11_clear_pixels,            0 },
+    { "gpu.d3d11_triangle_pixels",            test_gpu_d3d11_triangle_pixels,         0 },
+    { "gpu.d3d11_texture_sampling",           test_gpu_d3d11_texture_sampling,        0 },
+    { "gpu.d3d11_blend_depth",                test_gpu_d3d11_blend_depth,             0 },
+    { "gpu.d3d11_shader_tables",              test_gpu_d3d11_shader_tables,           0 },
+    { "gpu.d3d11_validation_bindset_slots",   test_gpu_d3d11_validation_bindset_slots, 1 },
+
+    { "draw2d.instance_layout",               test_draw2d_instance_layout,            0 },
+    { "draw2d.f16",                           test_draw2d_f16,                        0 },
+    { "draw2d.submit_fields",                 test_draw2d_submit_fields,              0 },
+    { "draw2d.batches_null",                  test_draw2d_batches_null,               0 },
+    { "draw2d.bindset_retire",                test_draw2d_bindset_retire,             0 },
+    { "draw2d.budget",                        test_draw2d_budget,                     0 },
+    { "draw2d.d3d11_pixels",                  test_draw2d_d3d11_pixels,               0 },
+    { "draw2d.d3d11_sdf_sheet",               test_draw2d_d3d11_sdf_sheet,            0 },
+    { "draw2d.camera_math",                   test_draw2d_camera_math,                0 },
+    { "draw2d.camera_submit",                 test_draw2d_camera_submit,              0 },
+    { "draw2d.camera_pop_empty",              test_draw2d_camera_pop_empty,           1 },
+    { "draw2d.d3d11_camera_pixels",           test_draw2d_d3d11_camera_pixels,        0 },
+    { "draw2d.bench_sprites_10k",             test_draw2d_bench_sprites_10k,          0 },
+    { "draw2d.text_glyph_data",               test_draw2d_text_glyph_data,            0 },
+    { "draw2d.text_measure",                  test_draw2d_text_measure,               0 },
+    { "draw2d.text_submit",                   test_draw2d_text_submit,                0 },
+    { "draw2d.d3d11_text_sheet",              test_draw2d_d3d11_text_sheet,           0 },
+    { "draw2d.bench_text",                    test_draw2d_bench_text,                 0 },
+
+    { "input.validation",                     test_input_validation,                  0 },
+    { "input.edges_frames",                   test_input_edges_frames,                0 },
+    { "input.short_presses",                  test_input_short_presses,               0 },
+    { "input.axis_normalization",             test_input_axis_normalization,          0 },
+    { "input.bindings",                       test_input_bindings,                    0 },
+    { "input.pointers",                       test_input_pointers,                    0 },
+    { "input.injection",                      test_input_injection,                   0 },
+    { "input.text",                           test_input_text,                        0 },
+
+    { "core.check_game",                      test_core_check_game,                   0 },
+    { "core.parse_args",                      test_core_parse_args,                   0 },
+    { "core.start_init",                      test_core_start_init,                   0 },
+    { "core.fixed_step",                      test_core_fixed_step,                   0 },
+    { "core.tick_input_events",               test_core_tick_input_events,            0 },
+    { "core.swap",                            test_core_swap,                         0 },
+    { "core.frame_null",                      test_core_frame_null,                   0 },
+    { "core.frame_d3d11",                     test_core_frame_d3d11,                  0 },
+    { "core.sfx_in_draw",                     test_core_sfx_in_draw,                  1 },
+
+    { "reflect.fields_hash",                  test_reflect_fields_hash,               0 },
+    { "reflect.get",                          test_reflect_get,                       0 },
+    { "reflect.arrays",                       test_reflect_arrays,                    0 },
+    { "reflect.paths",                        test_reflect_paths,                     0 },
+    { "reflect.set",                          test_reflect_set,                       0 },
+    { "reflect.dump",                         test_reflect_dump,                      0 },
+    { "reflect.suggest",                      test_reflect_suggest,                   0 },
+    { "reflect.nonfinite",                    test_reflect_nonfinite,                 0 },
+    { "reflect.core",                         test_reflect_core,                      0 },
+
+    { "protocol.commands",                    test_protocol_commands,                 0 },
+    { "protocol.large_response",              test_protocol_large_response,           0 },
+    { "protocol.process",                     test_protocol_process,                  0 },
+
+    { "png.roundtrip",                        test_png_roundtrip,                     0 },
+    { "png.reference",                        test_png_reference,                     0 },
+    { "png.errors",                           test_png_errors,                        0 },
+
+    { "shot.diff",                            test_shot_diff,                         0 },
+    { "shot.size_flag",                       test_shot_size_flag,                    0 },
+    { "shot.capture",                         test_shot_capture,                      0 },
+    { "shot.no_gpu",                          test_shot_no_gpu,                       0 },
+
+    { "snap.roundtrip",                       test_snap_roundtrip,                    0 },
+    { "snap.slots",                           test_snap_slots,                        0 },
+    { "snap.nonfinite",                       test_snap_nonfinite,                    0 },
+    { "snap.recordings",                      test_snap_recordings,                   0 },
+    { "replay.rle",                           test_replay_rle,                        0 },
+    { "replay.roundtrip",                     test_replay_roundtrip,                  0 },
+    { "replay.mutated",                       test_replay_mutated,                    0 },
+    { "replay.session",                       test_replay_session,                    0 },
+    { "replay.errors",                        test_replay_errors,                     0 },
+
+    { "crash.null_write",                     test_crash_null_write,                  0 },
+    { "crash.assert",                         test_crash_assert,                      0 },
+    { "crash.divide_by_zero",                 test_crash_divide_by_zero,              0 },
+    { "crash.panic",                          test_crash_panic,                       0 },
+    { "crash.stack_overflow",                 test_crash_stack_overflow,              0 },
+    { "crash.zone_order",                     test_crash_zone_order,                  0 },
+    { "crash.zone_left_open",                 test_crash_zone_left_open,              0 },
+
+    { "profile.busy_loop",                    test_profile_busy_loop,                 0 },
+    { "profile.report",                       test_profile_report,                    0 },
+    { "log.ring",                             test_log_ring,                          0 },
+    { "log.echo",                             test_log_echo,                          0 },
+
+    { "golden.lint",                          test_golden_lint,                       0 },
+    { "golden.compare",                       test_golden_compare,                    0 },
+    { "golden.update_names",                  test_golden_update_names,               0 },
+    { "perf.budget_parse",                    test_perf_budget_parse,                 0 },
+    { "perf.check",                           test_perf_check,                        0 },
 };

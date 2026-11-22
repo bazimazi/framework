@@ -20,7 +20,7 @@
 #ifndef BMF_WIN32_API_H
 #define BMF_WIN32_API_H
 
-#include "../../base/base_types.h"
+#include "../../bmf.h"
 
 // ================================================================ basic types
 typedef void* HANDLE;
@@ -448,6 +448,9 @@ enum {
     WIN32_D3D11_MESSAGE_SEVERITY_WARNING = 2,
     WIN32_D3D11_MESSAGE_SEVERITY_INFO = 3,
     WIN32_D3D11_MESSAGE_SEVERITY_MESSAGE = 4,
+    WIN32_D3D11_FEATURE_D3D11_OPTIONS = 5,         // D3D11_FEATURE (ID3D11Device::CheckFeatureSupport)
+    WIN32_D3D11_COPY_NO_OVERWRITE = 0x1,           // D3D11_COPY_FLAGS (ID3D11DeviceContext1::UpdateSubresource1)
+    WIN32_D3D11_COPY_DISCARD = 0x2,
 
     WIN32_D3DCOMPILE_DEBUG = 0x1,                  // D3DCompile Flags1
     WIN32_D3DCOMPILE_SKIP_OPTIMIZATION = 0x4,
@@ -849,6 +852,23 @@ typedef struct D3D11_MESSAGE {                     // D3D11_MESSAGE (ID3D11InfoQ
     size_t DescriptionByteLength;
 } D3D11_MESSAGE;
 
+typedef struct D3D11_FEATURE_DATA_D3D11_OPTIONS {  // D3D11_FEATURE_DATA_D3D11_OPTIONS (BOOL fields)
+    i32 OutputMergerLogicOp;
+    i32 UAVOnlyRenderingForcedSampleCount;
+    i32 DiscardAPIsSeenByDriver;
+    i32 FlagsForUpdateAndCopySeenByDriver;
+    i32 ClearView;
+    i32 CopyWithOverlap;
+    i32 ConstantBufferPartialUpdate;
+    i32 ConstantBufferOffsetting;
+    i32 MapNoOverwriteOnDynamicConstantBuffer;
+    i32 MapNoOverwriteOnDynamicBufferSRV;
+    i32 MultisampleRTVWithForcedSampleCountOne;
+    i32 SAD4ShaderInstructions;
+    i32 ExtendedDoublesShaderInstructions;
+    i32 ExtendedResourceSharing;
+} D3D11_FEATURE_DATA_D3D11_OPTIONS;
+
 BMF_STATIC_ASSERT(sizeof(GUID) == 16 && sizeof(RECT) == 16 && sizeof(POINT) == 8, "basic struct layout");
 BMF_STATIC_ASSERT(sizeof(SECURITY_ATTRIBUTES) == 24 && sizeof(STARTUPINFOW) == 104 && sizeof(PROCESS_INFORMATION) == 24, "kernel32 struct layout");
 BMF_STATIC_ASSERT(sizeof(WIN32_FIND_DATAW) == 592 && sizeof(WIN32_FILE_ATTRIBUTE_DATA) == 36 && sizeof(SYSTEM_INFO) == 48, "kernel32 struct layout");
@@ -864,6 +884,7 @@ BMF_STATIC_ASSERT(sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC) == 24 && sizeof(D3D11_
 BMF_STATIC_ASSERT(sizeof(D3D11_INPUT_ELEMENT_DESC) == 32 && sizeof(D3D11_BLEND_DESC) == 264 && sizeof(D3D11_RASTERIZER_DESC) == 40, "D3D11 struct layout");
 BMF_STATIC_ASSERT(sizeof(D3D11_DEPTH_STENCIL_DESC) == 52 && sizeof(D3D11_SAMPLER_DESC) == 52 && sizeof(D3D11_VIEWPORT) == 24, "D3D11 struct layout");
 BMF_STATIC_ASSERT(sizeof(D3D11_BOX) == 24 && sizeof(D3D11_MAPPED_SUBRESOURCE) == 16 && sizeof(D3D11_MESSAGE) == 32, "D3D11 struct layout");
+BMF_STATIC_ASSERT(sizeof(D3D11_FEATURE_DATA_D3D11_OPTIONS) == 56, "D3D11 struct layout");
 
 // ================================================================ kernel32.dll
 WIN32_IMPORT __attribute__((noreturn)) void ExitProcess(u32 uExitCode);                         // ExitProcess
@@ -926,6 +947,7 @@ WIN32_IMPORT u32    GetActiveProcessorCount(u16 group);                         
 WIN32_IMPORT i32    QueryPerformanceCounter(i64* count);                                        // QueryPerformanceCounter
 WIN32_IMPORT i32    QueryPerformanceFrequency(i64* freq);                                       // QueryPerformanceFrequency
 WIN32_IMPORT void   Sleep(u32 ms);                                                              // Sleep
+WIN32_IMPORT void   GetSystemTimeAsFileTime(u64* file_time);                                    // GetSystemTimeAsFileTime (FILETIME: 2 x u32, read as one u64)
 WIN32_IMPORT HANDLE CreateWaitableTimerExW(SECURITY_ATTRIBUTES* sa, const WCHAR* name, u32 flags,
                                            u32 access);                                         // CreateWaitableTimerExW
 WIN32_IMPORT i32    SetWaitableTimer(HANDLE timer, const i64* due_time, i32 period_ms, void* completion,
@@ -1105,7 +1127,7 @@ typedef struct ID3D11DeviceVtbl {                  // ID3D11Device
     void* _30_CheckMultisampleQualityLevels;
     void* _31_CheckCounterInfo;
     void* _32_CheckCounter;
-    void* _33_CheckFeatureSupport;
+    HRESULT (*CheckFeatureSupport)(ID3D11Device* self, u32 feature, void* support_data, u32 support_data_size);    // 33
     void* _34_GetPrivateData;
     void* _35_SetPrivateData;
     void* _36_SetPrivateDataInterface;
@@ -1115,7 +1137,9 @@ typedef struct ID3D11DeviceVtbl {                  // ID3D11Device
 } ID3D11DeviceVtbl;
 struct ID3D11Device { const ID3D11DeviceVtbl* lpVtbl; };
 
-typedef struct ID3D11DeviceContextVtbl {           // ID3D11DeviceContext
+// Slots 112 and up belong to ID3D11DeviceContext1 (d3d11_1.h): call them only through the
+// pointer QueryInterface(WIN32_IID_ID3D11DeviceContext1) returned (the layouts share the prefix).
+typedef struct ID3D11DeviceContextVtbl {           // ID3D11DeviceContext, ID3D11DeviceContext1
     HRESULT (*QueryInterface)(ID3D11DeviceContext* self, const GUID* iid, void** out);                       // 0
     u32     (*AddRef)(ID3D11DeviceContext* self);                                                            // 1
     u32     (*Release)(ID3D11DeviceContext* self);                                                           // 2
@@ -1243,6 +1267,21 @@ typedef struct ID3D11DeviceContextVtbl {           // ID3D11DeviceContext
     void* _109_CSGetConstantBuffers;
     void    (*ClearState)(ID3D11DeviceContext* self);                                                        // 110
     void    (*Flush)(ID3D11DeviceContext* self);                                                             // 111
+    void* _112_GetType;
+    void* _113_GetContextFlags;
+    void* _114_FinishCommandList;
+    void* _115_CopySubresourceRegion1;                                                                         // ID3D11DeviceContext1 from here
+    void    (*UpdateSubresource1)(ID3D11DeviceContext* self, ID3D11Resource* dst, u32 dst_subresource, const D3D11_BOX* dst_box,
+                                  const void* src_data, u32 src_row_pitch, u32 src_depth_pitch, u32 copy_flags);  // 116
+    void* _117_DiscardResource;
+    void* _118_DiscardView;
+    void    (*VSSetConstantBuffers1)(ID3D11DeviceContext* self, u32 start_slot, u32 count, ID3D11Buffer* const* buffers,
+                                     const u32* first_constant, const u32* constant_count);                    // 119
+    void* _120_HSSetConstantBuffers1;
+    void* _121_DSSetConstantBuffers1;
+    void* _122_GSSetConstantBuffers1;
+    void    (*PSSetConstantBuffers1)(ID3D11DeviceContext* self, u32 start_slot, u32 count, ID3D11Buffer* const* buffers,
+                                     const u32* first_constant, const u32* constant_count);                    // 123
 } ID3D11DeviceContextVtbl;
 struct ID3D11DeviceContext { const ID3D11DeviceContextVtbl* lpVtbl; };
 
@@ -1469,6 +1508,7 @@ struct IAudioRenderClient { const IAudioRenderClientVtbl* lpVtbl; };
 
 // ---------------------------------------------------------------- interface and class IDs
 static const GUID WIN32_IID_ID3D11Texture2D     = { 0x6f15aaf2, 0xd208, 0x4e89, { 0x9a, 0xb4, 0x48, 0x95, 0x35, 0xd3, 0x4f, 0x9c } };
+static const GUID WIN32_IID_ID3D11DeviceContext1 = { 0xbb2c6faa, 0xb5fb, 0x4082, { 0x8e, 0x6b, 0x38, 0x8b, 0x8c, 0xfa, 0x90, 0xe1 } };
 static const GUID WIN32_IID_ID3D11Debug         = { 0x79cf2233, 0x7536, 0x4948, { 0x9d, 0x36, 0x1e, 0x46, 0x92, 0xdc, 0x57, 0x60 } };
 static const GUID WIN32_IID_ID3D11InfoQueue     = { 0x6543dbb6, 0x1b48, 0x42f5, { 0xab, 0x82, 0xe9, 0x7e, 0xc7, 0x43, 0x26, 0xf6 } };
 static const GUID WIN32_IID_IDXGIDevice         = { 0x54ec77fa, 0x1377, 0x44e6, { 0x8c, 0x32, 0x88, 0xfd, 0x5f, 0x44, 0xc8, 0x4c } };

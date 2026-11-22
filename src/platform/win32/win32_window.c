@@ -317,14 +317,14 @@ static LRESULT win32_window_proc(HWND hwnd, u32 message, WPARAM wparam, LPARAM l
         platform_event_push(&event);
         return 0;
     }
-    case WIN32_WM_LBUTTONDOWN: win32_mouse_button(hwnd, BMF_MOUSE_LEFT, 1); return 0;
-    case WIN32_WM_LBUTTONUP:   win32_mouse_button(hwnd, BMF_MOUSE_LEFT, 0); return 0;
-    case WIN32_WM_RBUTTONDOWN: win32_mouse_button(hwnd, BMF_MOUSE_RIGHT, 1); return 0;
-    case WIN32_WM_RBUTTONUP:   win32_mouse_button(hwnd, BMF_MOUSE_RIGHT, 0); return 0;
-    case WIN32_WM_MBUTTONDOWN: win32_mouse_button(hwnd, BMF_MOUSE_MIDDLE, 1); return 0;
-    case WIN32_WM_MBUTTONUP:   win32_mouse_button(hwnd, BMF_MOUSE_MIDDLE, 0); return 0;
+    case WIN32_WM_LBUTTONDOWN: win32_mouse_button(hwnd, BMF_MOUSE_BUTTON_LEFT, 1); return 0;
+    case WIN32_WM_LBUTTONUP:   win32_mouse_button(hwnd, BMF_MOUSE_BUTTON_LEFT, 0); return 0;
+    case WIN32_WM_RBUTTONDOWN: win32_mouse_button(hwnd, BMF_MOUSE_BUTTON_RIGHT, 1); return 0;
+    case WIN32_WM_RBUTTONUP:   win32_mouse_button(hwnd, BMF_MOUSE_BUTTON_RIGHT, 0); return 0;
+    case WIN32_WM_MBUTTONDOWN: win32_mouse_button(hwnd, BMF_MOUSE_BUTTON_MIDDLE, 1); return 0;
+    case WIN32_WM_MBUTTONUP:   win32_mouse_button(hwnd, BMF_MOUSE_BUTTON_MIDDLE, 0); return 0;
     case WIN32_WM_XBUTTONDOWN: case WIN32_WM_XBUTTONUP: {
-        bmf_mouse_button button = ((wparam >> 16) & 0xFFFF) == WIN32_XBUTTON2 ? BMF_MOUSE_X2 : BMF_MOUSE_X1;
+        bmf_mouse_button button = ((wparam >> 16) & 0xFFFF) == WIN32_XBUTTON2 ? BMF_MOUSE_BUTTON_X2 : BMF_MOUSE_BUTTON_X1;
         win32_mouse_button(hwnd, button, message == WIN32_WM_XBUTTONDOWN);
         return 1;   // X buttons: TRUE means handled
     }

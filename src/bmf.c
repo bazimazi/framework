@@ -13,34 +13,69 @@
 #error "bmf.c: the runtime exe needs exactly one of BMF_GAME_LINK_DLL, BMF_GAME_LINK_STATIC"
 #endif
 
-#include "base/base_types.h"
+// The public header first, then the internal headers, then the implementation. The game DLL
+// (debug builds, D-13) compiles only bmf.h and base_builtins.c (memcpy, _fltused, stack probe:
+// code clang emits calls to), so a game that uses anything outside bmf.h fails to compile in
+// debug. Every engine function is imported from the runtime exe, which exports its bmf_*
+// functions (build.c), so the DLL and the exe share one engine with one copy of each module's state.
+#include "bmf.h"
 #include "base/base_builtins.c"
-#include "base/base_memory.h"
-#include "base/base_memory.c"
-#include "base/base_simd.h"
-#include "base/base_math.h"
-#include "base/base_math.c"
-#include "base/base_hash.h"
-#include "base/base_hash.c"
-#include "base/base_rng.h"
-#include "base/base_sort.h"
-#include "base/base_sort.c"
-#include "base/base_string.h"
-#include "base/base_string.c"
 
+#if !defined(BMF_BUILD_GAME_DLL)
+#include "base/base_memory.h"
+#include "base/base_string.h"
+#include "base/base_png.h"
 #include "platform/platform.h"
+#include "gpu/gpu.h"
+#include "draw2d/draw2d.h"
+#include "input/input.h"
+#include "debug/reflect.h"
+#include "debug/protocol.h"
+#include "debug/shot.h"
+#include "debug/replay.h"
+#include "debug/snap.h"
+#include "debug/crash.h"
+#include "debug/profile.h"
+#include "core/core.h"
+
+#include "base/base_memory.c"
+#include "base/base_math.c"
+#include "base/base_hash.c"
+#include "base/base_sort.c"
+#include "base/base_string.c"
+#include "base/base_png_write.c"
+#include "base/base_png_read_stored.c"
+
 #include "platform/platform_common.c"
 #if BMF_OS_WINDOWS
 #include "platform/win32/win32_api.h"
 #include "platform/win32/win32_core.c"
+#include "platform/win32/win32_crash.c"
 #include "platform/win32/win32_window.c"
 #endif
 
-#include "gpu/gpu.h"
 #if BMF_OS_WINDOWS
 #include "gpu/d3d11/gpu_d3d11.c"
 #endif
 #include "gpu/gpu.c"
+
+#include "draw2d/draw2d.c"
+#include "draw2d/font_stroke.c"
+
+#include "input/input.c"
+
+#include "debug/reflect.c"
+
+#include "core/core.c"
+
+#include "debug/protocol.c"
+#include "debug/shot.c"
+#include "debug/replay.c"
+#include "debug/snap.c"
+#include "debug/crash.c"
+#include "debug/profile.c"
+#include "debug/log.c"
+#endif // !BMF_BUILD_GAME_DLL
 
 #if defined(BMF_BUILD_RUNTIME_EXE) && BMF_OS_WINDOWS
 #include "platform/win32/win32_main.c"

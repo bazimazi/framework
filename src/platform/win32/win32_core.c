@@ -1,38 +1,13 @@
 // win32_core.c: Win32 platform core (SPEC §9, task 1A-11). Implements src/platform/platform.h
 // except window and events (win32_window.c, 1A-12): process start and arguments, buffered stdio,
 // virtual memory, time and sleep, files, file-change polling, DLLs, futex and semaphore,
-// threads. Also the fatal-error hook used by base_types.h.
+// threads. The fatal-error hook (bmf.h) and crash reports are in win32_crash.c.
 
-// ---------------------------------------------------------------- fatal error (base_types.h hook)
-// Writes one JSON line to stderr: {"event":"crash","reason":KIND,"detail":WHAT,"file":F,"line":N}.
-// Uses only a stack buffer (safe at crash time, from any thread). From 1A-35 on it also writes the
-// crash replay.
-void bmf_platform_fatal(const char* file, i32 line, const char* kind, const char* what) {
-    char buf[2048];
-    i32 len = 0;
-    const char* parts[4] = { kind, what, file, 0 };
-    const char* keys[3] = { "{\"event\":\"crash\",\"reason\":\"", "\",\"detail\":\"", "\",\"file\":\"" };
-    for (i32 p = 0; p < 3; p++) {
-        for (const char* k = keys[p]; *k && len < 1900; k++) buf[len++] = *k;
-        for (const char* s = parts[p]; s && *s && len < 1900; s++) {
-            char c = *s;
-            if (c == '"' || c == '\\') { buf[len++] = '\\'; buf[len++] = c; }
-            else if ((u8)c < 0x20) buf[len++] = ' ';
-            else buf[len++] = c;
-        }
-    }
-    const char* tail = "\",\"line\":";
-    for (const char* k = tail; *k; k++) buf[len++] = *k;
-    char digits[12];
-    i32 d = 0;
-    u32 value = line < 0 ? 0u : (u32)line;
-    do { digits[d++] = "0123456789"[value % 10]; value /= 10; } while (value);
-    while (d) buf[len++] = digits[--d];
-    buf[len++] = '}';
-    buf[len++] = '\n';
-    u32 written = 0;
-    WriteFile(GetStdHandle((u32)WIN32_STD_ERROR_HANDLE), buf, (u32)len, &written, 0);
-}
+// Crash reports live in win32_crash.c (included after this file).
+enum { WIN32_CRASH_STACK_GUARANTEE = 64 * 1024 };   // stack kept for the report after an overflow
+static void win32_crash_install(void);
+static void win32_crash_module_add(void* module);
+static void win32_crash_module_remove(void* module);
 
 // ---------------------------------------------------------------- virtual memory (base_memory.h hooks)
 void* bmf_platform_reserve(i64 size) {
@@ -145,6 +120,7 @@ void bmf_platform_init(void) {
     QueryPerformanceFrequency(&win32_core.counter_frequency);
     win32_core.std_handles[BMF_STREAM_STDOUT] = GetStdHandle((u32)WIN32_STD_OUTPUT_HANDLE);
     win32_core.std_handles[BMF_STREAM_STDERR] = GetStdHandle((u32)WIN32_STD_ERROR_HANDLE);
+    win32_crash_install();   // win32_crash.c: unhandled exceptions become crash reports
     // High-resolution timers need Windows 10 1803; older systems get a normal one (~1-16 ms late).
     win32_core.sleep_timer = CreateWaitableTimerExW(0, 0, WIN32_CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, WIN32_TIMER_ALL_ACCESS);
     if (!win32_core.sleep_timer) win32_core.sleep_timer = CreateWaitableTimerExW(0, 0, 0, WIN32_TIMER_ALL_ACCESS);
@@ -191,6 +167,18 @@ void bmf_platform_flush(bmf_stream stream) {
     BMF_ASSERT(stream == BMF_STREAM_STDOUT || stream == BMF_STREAM_STDERR);
     win32_write_all(win32_core.std_handles[stream], win32_core.stdio_buffer[stream], win32_core.stdio_len[stream]);
     win32_core.stdio_len[stream] = 0;
+}
+
+i32 bmf_platform_stdin_read(void* buffer, i32 capacity) {
+    BMF_ASSERT(buffer && capacity > 0);
+    HANDLE input = GetStdHandle((u32)WIN32_STD_INPUT_HANDLE);
+    if (!input || input == WIN32_INVALID_HANDLE_VALUE) return 0;
+    u32 got = 0;
+    if (!ReadFile(input, buffer, (u32)capacity, &got, 0)) {
+        u32 error = GetLastError();
+        return error == WIN32_ERROR_BROKEN_PIPE || error == WIN32_ERROR_NO_DATA ? 0 : -1;
+    }
+    return (i32)got;
 }
 
 void bmf_platform_write(bmf_stream stream, const char* data, i32 len) {
@@ -305,6 +293,12 @@ void bmf_platform_file_unmap(bmf_file_map* map) {
 }
 
 bmf_err bmf_platform_file_write_atomic(const char* path, const void* data, i64 size) {
+    const void* parts[1] = { data };
+    i64 sizes[1] = { size };
+    return bmf_platform_file_write_atomic_parts(path, parts, sizes, 1);
+}
+
+bmf_err bmf_platform_file_write_atomic_parts(const char* path, const void* const* parts, const i64* sizes, i32 count) {
     WCHAR target[BMF_PLATFORM_PATH_MAX];
     if (!win32_path(path, target, BMF_PLATFORM_PATH_MAX - 40)) return BMF_ERR_RANGE;   // room for the temp suffix
     // Temp name in the same folder (a rename across volumes is not atomic): "<path>.<pid>-<tid>.tmp".
@@ -318,16 +312,20 @@ bmf_err bmf_platform_file_write_atomic(const char* path, const void* data, i64 s
 
     HANDLE file = CreateFileW(temp, WIN32_GENERIC_WRITE, 0, 0, WIN32_CREATE_ALWAYS, WIN32_FILE_ATTRIBUTE_NORMAL, 0);
     if (file == WIN32_INVALID_HANDLE_VALUE) return win32_last_file_error();
-    const u8* bytes = (const u8*)data;
-    i64 done = 0;
-    while (done < size) {
-        i64 chunk = size - done < (1 << 30) ? size - done : (1 << 30);
-        u32 written = 0;
-        if (!WriteFile(file, bytes + done, (u32)chunk, &written, 0) || written == 0) break;
-        done += written;
+    b32 complete = 1;
+    for (i32 p = 0; p < count && complete; p++) {
+        const u8* bytes = (const u8*)parts[p];
+        i64 done = 0;
+        while (done < sizes[p]) {
+            i64 chunk = sizes[p] - done < (1 << 30) ? sizes[p] - done : (1 << 30);
+            u32 written = 0;
+            if (!WriteFile(file, bytes + done, (u32)chunk, &written, 0) || written == 0) break;
+            done += written;
+        }
+        complete = done == sizes[p];
     }
     CloseHandle(file);
-    if (done != size) { DeleteFileW(temp); return BMF_ERR_IO; }
+    if (!complete) { DeleteFileW(temp); return BMF_ERR_IO; }
     // Virus scanners and the search indexer open freshly written files for a moment without delete
     // sharing, which makes the rename fail with ACCESS_DENIED or SHARING_VIOLATION (seen in about
     // 1 of 15 test runs). Retry with backoff: 0+1+2+4+8+16+32 = 63 ms at most before giving up.
@@ -343,6 +341,19 @@ bmf_err bmf_platform_file_write_atomic(const char* path, const void* data, i64 s
         Sleep(backoff_ms);   // kernel32 Sleep: callable from any thread, unlike bmf_platform_sleep_ns
         backoff_ms = backoff_ms ? backoff_ms * 2 : 1;
     }
+}
+
+bmf_err bmf_platform_dir_create(const char* path) {
+    WCHAR wide[BMF_PLATFORM_PATH_MAX];
+    if (!win32_path(path, wide, BMF_PLATFORM_PATH_MAX)) return BMF_ERR_RANGE;
+    if (CreateDirectoryW(wide, 0) || GetLastError() == WIN32_ERROR_ALREADY_EXISTS) return BMF_OK;
+    return win32_last_file_error();
+}
+
+i64 bmf_platform_utc_ns(void) {
+    u64 file_time = 0;   // 100 ns units since 1601-01-01 UTC
+    GetSystemTimeAsFileTime(&file_time);
+    return (i64)(file_time - 116444736000000000ull) * 100;
 }
 
 bmf_err bmf_platform_file_delete(const char* path) {
@@ -383,7 +394,9 @@ b32 bmf_platform_file_watch_poll(bmf_file_watch* watch, i64 now_ns) {
 bmf_library bmf_platform_library_load(const char* path) {
     WCHAR wide[BMF_PLATFORM_PATH_MAX];
     if (!win32_path(path, wide, BMF_PLATFORM_PATH_MAX)) return 0;
-    return (bmf_library)LoadLibraryW(wide);
+    HMODULE module = LoadLibraryW(wide);
+    if (module) win32_crash_module_add(module);   // faults in its code are crashes of ours
+    return (bmf_library)module;
 }
 
 void* bmf_platform_library_symbol(bmf_library library, const char* name) {
@@ -391,7 +404,9 @@ void* bmf_platform_library_symbol(bmf_library library, const char* name) {
 }
 
 void bmf_platform_library_unload(bmf_library library) {
-    if (library) FreeLibrary((HMODULE)library);
+    if (!library) return;
+    win32_crash_module_remove(library);
+    FreeLibrary((HMODULE)library);
 }
 
 // ---------------------------------------------------------------- futex and semaphore
@@ -438,6 +453,8 @@ static struct {
 
 static u32 win32_thread_main(void* parameter) {
     bmf_fpu_setup();   // D-37 rule 10: before any user code
+    u32 guarantee = WIN32_CRASH_STACK_GUARANTEE;   // room to report a stack overflow on this thread
+    SetThreadStackGuarantee(&guarantee);
     i32 slot = (i32)(i64)parameter;
     bmf_thread_fn fn = win32_thread_slots[slot].fn;
     void* user = win32_thread_slots[slot].user;
@@ -478,3 +495,5 @@ void bmf_platform_thread_join(bmf_thread* thread) {
 i32 bmf_platform_cpu_count(void) {
     return (i32)GetActiveProcessorCount(WIN32_ALL_PROCESSOR_GROUPS);
 }
+
+b32 bmf_platform_is_main_thread(void) { return GetCurrentThreadId() == win32_core.main_thread_id; }

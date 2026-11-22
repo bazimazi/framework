@@ -1,4 +1,4 @@
-// base_string.c: see base_string.h.
+// base_string.c: strings, UTF-8/UTF-16, formatting, parsing, JSON writer (contracts: bmf.h and base_string.h).
 //
 // Float <-> text design (own design on top of IEEE f64 arithmetic, no tables beyond powers of 10):
 // - Parsing: the first 19 significant digits give an f64 approximation r of the value with
@@ -697,6 +697,25 @@ static bmf_err str_parse_integer(bmf_str s, i64 min, i64 max, i64* out) {
     if (too_big) return BMF_ERR_RANGE;
     *out = negative ? (i64)((u64)0 - v) : (i64)v;
     return BMF_OK;
+}
+
+i32 bmf_str_edit_distance(bmf_str a, bmf_str b) {
+    if (a.len > BMF_STR_EDIT_DISTANCE_MAX_LEN || b.len > BMF_STR_EDIT_DISTANCE_MAX_LEN) return -1;
+    i32 row[BMF_STR_EDIT_DISTANCE_MAX_LEN + 1];
+    for (i32 j = 0; j <= b.len; j++) row[j] = j;
+    for (i32 i = 1; i <= a.len; i++) {
+        i32 diagonal = row[0];
+        row[0] = i;
+        for (i32 j = 1; j <= b.len; j++) {
+            i32 above = row[j];
+            i32 best = diagonal + (a.ptr[i - 1] == b.ptr[j - 1] ? 0 : 1);
+            if (above + 1 < best) best = above + 1;
+            if (row[j - 1] + 1 < best) best = row[j - 1] + 1;
+            row[j] = best;
+            diagonal = above;
+        }
+    }
+    return row[b.len];
 }
 
 bmf_err bmf_parse_i32(bmf_str s, i32* out) {

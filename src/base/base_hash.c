@@ -1,5 +1,5 @@
-// base_hash.c: see base_hash.h for the design.
-#include "base_hash.h"
+// base_hash.c: the bmf hash, CRC-32 and Adler-32 (design: bmf.h, hashing section).
+#include "../bmf.h"
 
 static const u64 HASH_K1 = 0x9E3779B97F4A7C15ull;
 static const u64 HASH_K2 = 0xD6E8FEB86659FD93ull;

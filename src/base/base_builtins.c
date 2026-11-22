@@ -6,7 +6,7 @@
 // - __chkstk (x64): stack probe for frames larger than 4 KiB.
 // Under BMF_SANITIZE the CRT provides all of these (ASan intercepts the mem functions), so none
 // is defined here (D-09).
-#include "base_types.h"
+#include "../bmf.h"
 
 #if !BMF_SANITIZE
 

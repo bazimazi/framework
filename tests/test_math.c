@@ -637,7 +637,7 @@ static void test_math_vector_output_hash(bmf_test* t) {
 
 // ---------------------------------------------------------------- fast tier (1A-04c)
 // Errors of bmf_fast_* against the deterministic tier (which is correctly rounded here) over
-// 200 000 samples each; the bounds are the ones documented in base_math.h.
+// 200 000 samples each; the bounds are the ones documented in bmf.h (fast tier).
 static void test_math_fast_tier(bmf_test* t) {
     bmf_rng r;
     bmf_rng_seed(&r, 11, 11);

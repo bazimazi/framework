@@ -37,6 +37,18 @@ Priority when rules conflict: runtime performance > agent operability > zero dep
 - Reproduce crashes from the `.bmfr` replay printed in the crash JSON line: `game.exe --replay <file>`.
 - For web parity: `build wasm release games/<g>` plus the `tools/serve` determinism test.
 
+## Quick reference: game runs, protocol, test files (enough to build a game from API.md alone)
+
+- Flags: `--headless` (no window, WARP), `--control` (protocol on stdin/stdout, starts paused), `--no-gpu`, `--seed N`, `--tick-rate N` (30..240), `--size WxH`, `--replay FILE [--verify | --profile]`, `--scale X`. A wrong flag prints the list.
+- Protocol: one request per line, one JSON response line per request (`{"ok":1,...}` or `{"ok":0,"error":CODE,"detail":...}`; a bad argument count answers with the usage). `help` lists every command with its usage. Pipe requests from Git Bash (`printf 'step 10\nquit\n' | game.exe ...`); end of stdin quits. A leading UTF-8 BOM is ignored.
+- Commands: `step N` (run N ticks now), `run`/`pause` (real time), `press ACTION [TICKS]` (held for TICKS ticks, default 1), `axis ACTION X Y [TICKS]`, `pointer I X Y down|up|move [world|screen]` (default world meters), `key NAME down|up`, `get PATH`, `set PATH VALUE...`, `dump [PREFIX]`, `watch PATH`/`unwatch PATH` (prints `{"event":"watch","path":...,"tick":T,"value":...}` when it changes during a step), `hash`, `snap save|load NAME`, `shot PATH.png [W H]`, `record start PATH`/`record stop`, `replay PATH`, `profile N`, `mem`, `log [LEVEL]`, `reload` (debug: hot reload the game DLL), `quit`.
+- Paths are field names from the game's field table: `name`, `name[i]`, `name[*]`; `tick` is built in. `tick` in every response and event = ticks completed (the state after them), the same value `bmf_ctx.tick` has in draw. `hash` covers the tick and the whole state block, so it changes every tick even when the game's own fields do not.
+- `state_layout_hash`: after changing the state struct or the field table, run the debug build once; it refuses to start and prints the value to declare.
+- Replays (`.bmfr`) are valid only for the same game name, state size, layout hash, field count and tick rate; renaming the game (`bmf_game_desc.name`) invalidates them, and a newer build of the same game only warns.
+- Golden tests live in `games/<g>/tests/`: `<scenario>.script` holds protocol lines plus `seed N`, `size WxH` (default 320x180) and `golden LABEL` (a WARP shot); tick counts (`step`, `press`, `axis`) are in the game's own ticks and are scaled for the 120 Hz recording. `build test --update-golden <g>.<scenario>` (`<g>` = the folder name) records `<scenario>.<rate>hz.bmfr` at the game's rate and at 120 Hz plus `golden/d3d11/<scenario>.<rate>hz.<LABEL>.png`; `build test` then checks that the replays still match their hashes and the shots their images. Scripts cannot assert field values; check those with the protocol.
+- `games/<g>/perf.budget`: `replay=tests/<file>.bmfr` lines (listed by hand: a new replay is not perf-checked until added) and `zone=<tick|draw|draw2d_flush|...> p99_us<=N` limits, checked on a release `BMF_AGENT=1` build.
+- `build test [filter]`: a filter selects unit tests by substring and runs the golden phase only if it starts with `golden`/`lint`, the perf phase only if it starts with `perf`; skipped phases say so. A game file with the line `// bmf-lint: sim` is linted as simulation code (the whole file, draw included: no `bmf_fast_*`, no raw float-to-int casts; int-to-float casts are fine).
+
 ## Summary format at the end of a task
 
 1. What changed (files, one line each).

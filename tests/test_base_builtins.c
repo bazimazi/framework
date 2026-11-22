@@ -1,4 +1,4 @@
-// Tests for src/base/base_builtins.c and base_types.h (task 1A-02).
+// Tests for src/base/base_builtins.c and the types section of src/bmf.h (task 1A-02).
 // The mem functions are called through volatile function pointers so the compiler cannot
 // replace the calls with inline code: this tests our implementations, not clang's.
 

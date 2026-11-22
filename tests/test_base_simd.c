@@ -1,4 +1,4 @@
-// Tests for src/base/base_simd.h (task 1A-05): every operation equals the scalar code bit for bit.
+// Tests for the SIMD section of src/bmf.h (task 1A-05): every operation equals the scalar code bit for bit.
 
 static u32 simd_bits(f32 f) { u32 u; __builtin_memcpy(&u, &f, 4); return u; }
 static f32 simd_from_bits(u32 u) { f32 f; __builtin_memcpy(&f, &u, 4); return f; }

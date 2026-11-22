@@ -49,7 +49,32 @@ Note: LLVM's Windows installer ships compiler-rt builtins for x86_64 Windows onl
 
 ```
 bootstrap.bat            (PowerShell: .\bootstrap.bat; builds build.exe, CRT-free, no Visual Studio needed)
-build test               (unit tests, from task 1A-08 on)
 ```
 
-`build win64 debug games/_empty` checks the whole pipeline (clang, SDK, linker) in about 0.3 s.
+Re-run it after every change to `build.c`. `build win64 debug games/_empty` checks the whole pipeline (clang, SDK, linker) in about 0.3 s.
+
+## 6. Optional: Visual Studio C++ headers
+
+`build test` runs a host check (`vtable_slots`) that compares the hand-written COM declarations in `src/platform/win32/win32_api.h` with the Windows SDK headers. It needs the MSVC C headers of a Visual Studio install (the newest `VC\Tools\MSVC\<ver>`, or the `BMF_MSVC` env var pointing at that folder). Without them the check is skipped and says so; nothing else needs Visual Studio.
+
+## 7. Everyday commands
+
+Every command prints one JSON line per result and exits nonzero on any failure.
+
+```
+build win64 debug games/hello            # out/hello/win64-debug: game.exe + game.dll (hot reload)
+build win64 release games/hello          # out/hello/win64-release: one static exe
+build win64 release games/hello --agent  # out/hello/win64-release-agent: release with BMF_AGENT=1 (protocol, profiler)
+build test [filter]                      # host checks, unit tests, goldens, perf budgets (tools/test/README.md)
+build test --update-golden NAME          # rewrite the named goldens (always name them in the change summary)
+build api                                # regenerate API.md from src/bmf.h (build test fails while it is stale)
+build shaders                            # HLSL to bytecode headers (also run by the other commands)
+build clean                              # delete out/
+```
+
+Run a game headless under agent control: `out/hello/win64-debug/game.exe --headless --control` (protocol in SPEC §11.2, `hello` lists the commands).
+
+Test environment notes:
+- Golden images render on WARP (`d3d10warp.dll`), so they need no GPU.
+- `gpu.d3d11_surface_present` shows a real window and needs an unlocked interactive session; it fails while the workstation is locked (LogonUI running).
+- Perf budgets run release `BMF_AGENT=1` builds on the null GPU backend; heavy load from other processes can still push a run over budget, which is why a failing run is repeated up to 3 times.

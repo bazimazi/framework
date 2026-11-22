@@ -1,0 +1,4 @@
+# sprites10k benchmark replay: 600 ticks (10 s at 60 Hz) of the default 10 000 sprites, no input.
+# Recorded with `build test --update-golden sprites10k.bench`; perf.budget plays it.
+size 320x180
+step 600
